@@ -13,6 +13,17 @@ import sys
 from busan_note import api, collect
 
 
+def _record_failure(kind, error):
+    """이번 실행의 실패로 meta.json 을 새로 쓴다(이전 실행의 실패 목록은 지운다)."""
+    import json
+    from datetime import datetime
+    meta_path = collect.DATA / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+    meta.update(last_run=datetime.now(collect.KST).strftime("%Y-%m-%dT%H:%M"), new_count=0, baseline_kinds=[],
+                failures=[{"kind": kind, "gu": "전체", "ym": "", "error": " ".join(str(error).split())[:160]}])
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def collect_reb():
     """부동산원 주간 지수. 키가 없거나 실패해도 전체를 멈추지 않는다."""
     import json
@@ -76,10 +87,11 @@ def main():
     if not args.no_fetch:
         try:
             meta = collect.run_collect(months=args.months, backfill=args.backfill)
+            logging.info("수집 끝 — 새 거래 %d건, 실패 %d건", meta["new_count"], len(meta["failures"]))
         except api.ApiError as e:
-            logging.error("수집 중단: %s", api.mask(e))
-            return 1
-        logging.info("수집 끝 — 새 거래 %d건, 실패 %d건", meta["new_count"], len(meta["failures"]))
+            # 공공데이터포털 접속 실패: 실거래만 건너뛰고 나머지 자료와 페이지 생성은 계속한다.
+            logging.error("실거래 수집 건너뜀: %s", api.mask(e))
+            _record_failure("실거래(공공데이터포털)", api.mask(e))
         collect_reb()
         collect_kosis()
         collect_extra()

@@ -110,7 +110,7 @@ def call(kind, lawd_cd, deal_ymd, service_key, page=1, rows=1000, timeout=30):
         "pageNo": page,
         "numOfRows": rows,
     }
-    for attempt, wait in enumerate((5, 15, None)):
+    for attempt, wait in enumerate((30, 60, 120, None)):
         try:
             r = requests.get(ENDPOINTS[kind], params=params, timeout=timeout)
             break
