@@ -272,6 +272,10 @@ def build_context():
                        "series": [vol[(lawd, m)] for m in all_months]})
     total_series = [sum(vol[(l, m)] for l in collect.LAWD) for m in all_months]
 
+    from . import predict
+    predictions = predict.evaluate({c["name"]: by_cx[i] for i, c in enumerate(allcx)},
+                                   {st["name"]: st["kind"] for st in stats}, now_label)
+
     new = [r for r in recs if r["is_new"]]
     new_watch = sorted((r for r in new if r["watch"]), key=lambda r: r["date"], reverse=True)
     new_other = sorted((r for r in new if not r["watch"]),
@@ -280,7 +284,7 @@ def build_context():
     return {
         "now": now, "meta": meta, "cards": cards,
         "chart": {"months": all_months, "series": series},
-        "compares": compares,
+        "compares": compares, "predictions": predictions,
         "volume": {"rows": volume, "months": all_months, "total": total_series,
                    "incomplete": sorted(incomplete), "recent3": recent3,
                    "span": (complete[0], complete[-1]) if complete else ("", "")},

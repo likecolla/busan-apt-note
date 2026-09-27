@@ -221,6 +221,30 @@ def compare_section(ctx, color_of):
     return "".join(out)
 
 
+STATUS_CLASS = {"적중": "hit", "빗나감": "miss", "표본 부족": "", "진행 중": "wait", "신고 기다림": "wait", "대기": ""}
+
+
+def prediction_section(ctx):
+    from . import predict
+    rows = ""
+    for p in ctx["predictions"]:
+        op = {">=": "이상", ">": "초과", "<=": "이하", "<": "미만"}[p["op"]]
+        target = f'{predict.fmt_value(p["metric"], p["value"])} {op}'
+        scored = p["status"] in ("적중", "빗나감", "표본 부족")
+        actual_label = "결과" if scored else "지금까지"
+        rows += (f'<tr><td class="wrap"><b>{e(p["question"])}</b><br><span class="unit">{e(p.get("by", ""))} · {e(p["made"])}'
+                 f' · 채점 {e(p["score_after"])}</span></td>'
+                 f'<td>{e(p["period"][0][2:])}~{e(p["period"][1][2:])}</td>'
+                 f'<td class="num">{e(target)}</td>'
+                 f'<td class="num">{e(predict.fmt_value(p["metric"], p["actual"]))}<br><span class="unit">{actual_label} {p["n"]}건</span></td>'
+                 f'<td><span class="tag {STATUS_CLASS.get(p["status"], "")}">{e(p["status"])}</span></td></tr>')
+    return f'''
+<p class="sub">질문에 미리 답(기준값)을 적어 두고, 기간이 끝나고 신고 기한 2개월이 지나면 실거래로 자동 채점합니다.
+예측은 config/predictions.json에서 더하거나 고칩니다. 맞히는 것보다 왜 빗나갔는지 돌아보는 것이 목적입니다.</p>
+<div class="scroll"><table><thead><tr><th>질문</th><th>기간</th><th>기준</th><th>실거래</th><th>상태</th></tr></thead>
+<tbody>{rows}</tbody></table></div>'''
+
+
 def volume_section(ctx):
     v = ctx["volume"]
     rows = ""
@@ -302,6 +326,10 @@ b.up{color:var(--up)} b.down{color:var(--s1)}
 .tag.hot{background:transparent;border:1px solid var(--up);color:var(--up)}
 .tag.cold{background:transparent;border:1px solid var(--s1);color:var(--s1)}
 .chart-box.small{height:220px}
+td.wrap{white-space:normal;min-width:180px;max-width:280px}
+.tag.hit{background:transparent;border:1px solid var(--s3);color:var(--s3)}
+.tag.miss{background:transparent;border:1px solid var(--up);color:var(--up)}
+.tag.wait{background:transparent;border:1px solid var(--accent2);color:var(--accent2)}
 .seg{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .seg button{font:inherit;font-size:.82rem;padding:4px 12px;border-radius:999px;border:1px solid var(--line);
 background:var(--surface);color:var(--text);cursor:pointer}
@@ -465,6 +493,9 @@ def build():
 
 <h2>거래량 온도</h2>
 {volume_section(ctx)}
+
+<h2 id="pred">예측 기록장</h2>
+{prediction_section(ctx)}
 
 <h2>이번에 새로 신고된 거래</h2>
 {new_section(ctx)}

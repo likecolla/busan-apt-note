@@ -67,6 +67,10 @@ b.up{color:var(--up)} b.down{color:var(--s1)}
 .tag.hot{background:transparent;border:1px solid var(--up);color:var(--up)}
 .tag.cold{background:transparent;border:1px solid var(--s1);color:var(--s1)}
 .chart-box.small{height:220px}
+td.wrap{white-space:normal;min-width:180px;max-width:280px}
+.tag.hit{background:transparent;border:1px solid var(--s3);color:var(--s3)}
+.tag.miss{background:transparent;border:1px solid var(--up);color:var(--up)}
+.tag.wait{background:transparent;border:1px solid var(--accent2);color:var(--accent2)}
 .seg{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .seg button{font:inherit;font-size:.82rem;padding:4px 12px;border-radius:999px;border:1px solid var(--line);
 background:var(--surface);color:var(--text);cursor:pointer}
@@ -301,6 +305,13 @@ ul.plain{margin:4px 0;padding-left:18px;font-size:.85rem}
 <h4>구별 비교 <span class="sub">(월평균: 2021-10 ~ 2026-07, 최근: 2026-05 ~ 2026-07)</span></h4>
 <div class="scroll"><table><thead><tr><th>구</th><th>전체 월평균</th><th>최근 3개월 월평균</th><th>비율</th><th></th></tr></thead>
 <tbody><tr><td><b>해운대구</b></td><td class="num">249건</td><td class="num">331건</td><td class="num">133%</td><td><span class="tag hot">평균보다 많음</span></td></tr><tr><td><b>수영구</b></td><td class="num">106건</td><td class="num">141건</td><td class="num">133%</td><td><span class="tag hot">평균보다 많음</span></td></tr><tr><td><b>남구</b></td><td class="num">176건</td><td class="num">223건</td><td class="num">126%</td><td><span class="tag hot">평균보다 많음</span></td></tr><tr><td><b>부산진구</b></td><td class="num">262건</td><td class="num">343건</td><td class="num">131%</td><td><span class="tag hot">평균보다 많음</span></td></tr><tr><td><b>동래구</b></td><td class="num">194건</td><td class="num">226건</td><td class="num">117%</td><td><span class="tag hot">평균보다 많음</span></td></tr><tr><td><b>연제구</b></td><td class="num">158건</td><td class="num">190건</td><td class="num">121%</td><td><span class="tag hot">평균보다 많음</span></td></tr></tbody></table></div>
+
+<h2 id="pred">예측 기록장</h2>
+
+<p class="sub">질문에 미리 답(기준값)을 적어 두고, 기간이 끝나고 신고 기한 2개월이 지나면 실거래로 자동 채점합니다.
+예측은 config/predictions.json에서 더하거나 고칩니다. 맞히는 것보다 왜 빗나갔는지 돌아보는 것이 목적입니다.</p>
+<div class="scroll"><table><thead><tr><th>질문</th><th>기간</th><th>기준</th><th>실거래</th><th>상태</th></tr></thead>
+<tbody><tr><td class="wrap"><b>동래래미안아이파크 84㎡형이 10~12월에 11억 원대를 회복할까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1,100,000,000원 (11억) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>써밋 리미티드 남천 84㎡형 분양권이 10~12월에도 16억 원 이상(웃돈 약 8,000만 유지)일까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1,600,000,000원 (16억) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10~12월 3.3㎡당 가격에서 레이카운티가 동래래미안아이파크보다 비쌀까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">+0.0% 초과</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>대연 디아이엘 84㎡형 분양권이 입주 6개월 전(10~12월)에 최근 3개월 중간값 8억 8,275만 이상을 지킬까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">882,750,000원 (8억 8,275만) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>드파인 광안의 첫 전세 실거래가 연말(10~12월 계약)까지 신고될까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1건 이상</td><td class="num">0건<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr></tbody></table></div>
 
 <h2>이번에 새로 신고된 거래</h2>
 <p class="sub">이번 갱신에서 새로 신고된 거래가 없습니다.</p>

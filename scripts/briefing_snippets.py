@@ -42,19 +42,60 @@ def area_floor(r):
     return f'{r["area"]:.1f}㎡ · {e(r["floor"])}층'
 
 
+def pct(v):
+    if v is None:
+        return "–"
+    cls = "plus" if v > 0 else "minus"
+    return f'<span class="{cls}">{v * 100:+.1f}%</span>'
+
+
+def few(n):
+    return ' <span class="few">표본 적음</span>' if n < analyze.MIN_SAMPLE else ""
+
+
+def ppy_txt(v):
+    return f"{v / 10000:,.0f}만원" if v else "–"
+
+
 def core_table(ctx):
     rows = []
     for c in ctx["cards"]:
         l = c["latest84"]
         latest = (f'{money2(l["price"])}<br><small>{d_short(l["date"])} · {area_floor(l)}</small>'
                   if l else "–")
-        med = f'{money2(c["med3"])}<br><small>{c["n3"]}건</small>' if c["med3"] else "–"
+        med = f'{money2(c["med3"])}<br><small>{c["n3"]}건</small>{few(c["n3"])}' if c["med3"] else "–"
+        ppy = (f'{ppy_txt(c["ppy3"])}<br><small>{c["ppy3_n"]}건 · 1년 전 대비 {pct(c["yoy"]) if c["ppy_prev_n"] else "거래 없음"}</small>'
+               if c["ppy3"] else "–")
+        pk = c["peak"]
+        peak = (f'{money2(pk["price"])}<br><small>{d_short(pk["date"])} · 3개월 중간값 {pct(c["vs_peak"])}</small>'
+                if pk else "–")
         rows.append(f'<tr><td><b>{e(c["name"])}</b><br><small>{e(c["kind_ko"])}</small></td>'
                     f'<td class="num">{latest}</td><td class="num">{med}</td>'
-                    f'<td class="num">{c["total"]}건</td></tr>')
+                    f'<td class="num">{ppy}</td><td class="num">{peak}</td></tr>')
     return ('<div class="scroll"><table>'
-            '<tr><th>단지</th><th>84㎡형 최근 거래</th><th>최근 3개월 중간값</th><th>6개월 거래</th></tr>'
+            '<tr><th>단지</th><th>84㎡형 최근 거래</th><th>최근 3개월 중간값</th><th>3.3㎡당 (모든 면적)</th><th>84㎡형 최고가(5년)</th></tr>'
             + "".join(rows) + "</table></div>")
+
+
+def compare_table(ctx):
+    rows = ""
+    for cp in ctx["compares"]:
+        last = [r for r in cp["rows"] if r["gap"] is not None][-2:]
+        cells = " → ".join(f'{e(r["q"])} {pct(r["gap"])}' for r in last) or "비교 가능한 분기 없음"
+        rows += f'<tr><td>{e(cp["title"])}</td><td>{cells}</td></tr>'
+    return ('<div class="scroll"><table><tr><th>비교</th><th>3.3㎡당 가격차 (최근 두 분기)</th></tr>'
+            + rows + "</table></div>")
+
+
+def prediction_table(ctx):
+    from busan_note import predict
+    rows = ""
+    for p in ctx["predictions"]:
+        op = {">=": "이상", ">": "초과", "<=": "이하", "<": "미만"}[p["op"]]
+        rows += (f'<tr><td>{e(p["question"])}<br><small>{e(p.get("why", ""))}</small></td>'
+                 f'<td class="num">{e(predict.fmt_value(p["metric"], p["value"]))} {op}</td>'
+                 f'<td>{e(p["status"])}<br><small>채점 {e(p["score_after"])}</small></td></tr>')
+    return ('<div class="scroll"><table><tr><th>질문</th><th>기준</th><th>상태</th></tr>' + rows + "</table></div>")
 
 
 def week_table(recs, start, end, n=10):
@@ -132,6 +173,12 @@ def main():
     week, week_n = week_table(recs, start, end)
     movein, mc = movein_table(ctx)
     volume, gap, labels = gu_stats(recs, ctx["now"])
+    vr = "".join(
+        f'<tr><td><b>{e(v["gu"])}</b></td><td class="num">{v["avg"]:.0f}건</td><td class="num">{v["recent"]:.0f}건</td>'
+        f'<td class="num">{pct(v["ratio"] - 1) if v["ratio"] else "–"}</td></tr>' for v in ctx["volume"]["rows"])
+    r3 = ctx["volume"]["recent3"]
+    volume_vs = ('<div class="scroll"><table><tr><th>구</th><th>5년 월평균</th>'
+                 f'<th>최근 3개월 월평균<br><small>{e(r3[0])}~{e(r3[-1])}</small></th><th>평균 대비</th></tr>' + vr + "</table></div>")
     out = {
         "asof": ctx["meta"].get("last_run", "")[:10],
         "core": core_table(ctx),
@@ -140,7 +187,8 @@ def main():
         "movein_latest84": format_won(mc["latest84"]["price"]) if mc["latest84"] else None,
         "movein_med3": format_won(mc["med3"]) if mc["med3"] else None,
         "movein_n3": mc["n3"], "movein_kind": mc["kind_ko"],
-        "volume": volume, "gap": gap, "months": labels,
+        "volume": volume, "gap": gap, "months": labels, "volume_vs": volume_vs,
+        "compare": compare_table(ctx), "predictions": prediction_table(ctx),
     }
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1)
 
