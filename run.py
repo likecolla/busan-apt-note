@@ -43,6 +43,26 @@ def collect_kosis():
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def collect_extra():
+    """청약홈 분양·경쟁률, K-apt 단지 정보. 실패해도 전체를 멈추지 않는다."""
+    import json
+    from busan_note import analyze, applyhome, kapt
+    meta_path = collect.DATA / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    fails = []
+    try:
+        fails += applyhome.collect(log=logging.info)
+    except api.ApiError as e:
+        fails.append({"kind": "청약홈", "gu": "부산", "ym": "", "error": api.mask(e)[:160]})
+    try:
+        cfg = analyze.load_config()
+        fails += kapt.collect(cfg["complexes"] + cfg.get("reference", []), log=logging.info)
+    except api.ApiError as e:
+        fails.append({"kind": "공동주택 정보", "gu": "전체", "ym": "", "error": api.mask(e)[:160]})
+    meta["failures"] = meta.get("failures", []) + fails
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-fetch", action="store_true")
@@ -62,6 +82,7 @@ def main():
         logging.info("수집 끝 — 새 거래 %d건, 실패 %d건", meta["new_count"], len(meta["failures"]))
         collect_reb()
         collect_kosis()
+        collect_extra()
     try:
         from busan_note import render
     except ImportError:

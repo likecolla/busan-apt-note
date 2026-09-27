@@ -141,6 +141,18 @@ def card_html(c):
     {pc_html}
   </details>'''
 
+    k = c.get("kapt") or {}
+    if k.get("units"):
+        used = k["used"]
+        bits = [f'{k["units"]:,}세대', f'{k["dongs"]}개 동', f'최고 {k["top"]}층',
+                f'{used[:4]}. {int(used[4:6])}. 사용승인' if len(used) >= 6 else "",
+                f'세대당 주차 {k["park_per_unit"]}대' if k.get("park_per_unit") else "",
+                f'{k["subway"]} {k["subway_time"]}'.strip() if k.get("subway") else "", k.get("builder", "")]
+        kapt_line = f'<p class="kapt">{e(" · ".join(b for b in bits if b))} <span class="unit">(K-apt)</span></p>'
+    elif k.get("note"):
+        kapt_line = '<p class="kapt sub">단지 정보: 입주 전이라 공동주택관리정보(K-apt)에 아직 없습니다.</p>'
+    else:
+        kapt_line = ""
     move_in = ""
     if c.get("move_in"):
         mrows = "".join(
@@ -158,6 +170,7 @@ def card_html(c):
     return f'''
 <article class="card">
   <header><h3>{e(c["name"])}</h3><span class="chip">{e(c["gu"])} · {e(c["kind_ko"])} 기준</span></header>
+  {kapt_line}
   <div class="stats">
     <div class="stat"><div class="label">84㎡형 최근 거래</div>{latest}</div>
     <div class="stat"><div class="label">84㎡형 최근 3개월 중간값</div><div>{med}</div></div>
@@ -332,6 +345,39 @@ def supply_section(ctx):
 <p class="sub">착공은 2~3년 뒤 입주 물량의 선행 지표입니다. 착공이 줄면 몇 년 뒤 신축 공급이 줄어 전세·신축 가격을 받치는 쪽으로, 미분양(특히 준공 후 미분양)이 늘면 누르는 쪽으로 작용하는 경우가 많습니다. 인구 순이동은 주소 이전 기준이라 실제 수요와 다를 수 있습니다.</p>'''
 
 
+def presale_section(ctx):
+    a = ctx.get("applyhome")
+    if not a:
+        return '<p class="sub">청약홈 자료를 아직 받지 못했습니다.</p>'
+    ymd = lambda v: f"{v[2:4]}.{v[5:7]}.{v[8:10]}" if v else "–"
+    ym = lambda v: f"{v[:4]}. {int(v[4:])}." if v and len(v) >= 6 else "–"
+
+    def comp_txt(c):
+        if not c:
+            return "–"
+        short = f'<br><span class="tag cold">미달 {c["short"]}/{c["types"]}개 주택형</span>' if c["short"] else ""
+        return f'<b>{c["local"]:.2f}</b> <span class="unit">해당지역</span><br><span class="unit">전체 {c["all"]:.2f}</span>{short}'
+    rows = "".join(
+        f'<tr><td class="wrap"><b>{e(x["HOUSE_NM"])}</b><br><span class="unit">{e(x["gu"])} · {e(x.get("CNSTRCT_ENTRPS_NM") or "")}</span></td>'
+        f'<td>{ymd(x.get("RCRIT_PBLANC_DE"))}</td><td class="num">{int(x.get("TOT_SUPLY_HSHLDCO") or 0):,}세대</td>'
+        f'<td>{ym(x.get("MVN_PREARNGE_YM"))}</td><td class="num">{comp_txt(x["comp"])}</td></tr>'
+        for x in a["recent"][:12])
+    up = "".join(f'<li><b>{e(x["HOUSE_NM"])}</b> ({e(x["gu"])}, {int(x.get("TOT_SUPLY_HSHLDCO") or 0):,}세대) · 접수 {ymd(x.get("RCEPT_BGNDE"))}~{ymd(x.get("RCEPT_ENDDE"))} · 발표 {ymd(x.get("PRZWNER_PRESNATN_DE"))}</li>'
+                 for x in a["upcoming"]) or "<li>접수를 앞둔 부산 APT 분양 공고가 없습니다.</li>"
+    yrs = " · ".join(f'{y}년 {n:,}세대' for y, n in a["movein_by_year"].items())
+    return f'''
+<p class="sub">한국부동산원 청약홈 APT 분양정보·경쟁률(부산). 경쟁률은 1순위 접수 건수 ÷ 공급 세대수입니다.</p>
+<div class="stats">
+  <div class="stat"><div class="label">최근 12개월 부산 분양</div>
+    <div><b>{a["last12_n"]}건</b>, 공급 {a["last12_supply"]:,}세대 · <b>{a["last12_short"]}건</b>에서 1·2순위 미달 주택형 발생</div></div>
+  <div class="stat"><div class="label">청약홈 분양 기준 입주 예정 (공급 세대, 조합원 물량 제외)</div><div>{yrs}</div></div>
+</div>
+<h4>접수 예정</h4><ul class="plain">{up}</ul>
+<h4>최근 분양 <span class="sub">(공고일 순)</span></h4>
+<div class="scroll"><table><thead><tr><th>단지</th><th>공고일</th><th>공급</th><th>입주 예정</th><th>1순위 경쟁률</th></tr></thead><tbody>{rows}</tbody></table></div>
+<p class="sub">재개발·재건축 단지는 조합원 물량이 빠져 있어 실제 입주 세대보다 적게 잡힙니다. 미달은 1·2순위 접수가 공급보다 적었던 주택형이 있었다는 뜻으로, 이후 무순위·계약 단계에서 채워질 수 있습니다.</p>'''
+
+
 STATUS_CLASS = {"적중": "hit", "빗나감": "miss", "표본 부족": "", "진행 중": "wait", "신고 기다림": "wait", "대기": ""}
 
 
@@ -437,6 +483,7 @@ b.up{color:var(--up)} b.down{color:var(--s1)}
 .tag.hot{background:transparent;border:1px solid var(--up);color:var(--up)}
 .tag.cold{background:transparent;border:1px solid var(--s1);color:var(--s1)}
 .chart-box.small{height:220px}
+.kapt{margin:6px 0 0;font-size:.82rem;color:var(--muted)}
 .div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .drow{display:grid;grid-template-columns:64px 1fr 1fr 52px;align-items:center;margin:4px 0;font-size:.85rem}
 .drow .neg,.drow .pos{height:14px;position:relative}
@@ -642,6 +689,9 @@ def build():
 
 <h2>구별 온도 <span class="sub">한국부동산원 주간 지수</span></h2>
 {temperature_section(ctx)}
+
+<h2>분양·청약 <span class="sub">청약홈</span></h2>
+{presale_section(ctx)}
 
 <h2>공급과 수요 <span class="sub">KOSIS</span></h2>
 {supply_section(ctx)}

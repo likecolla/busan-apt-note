@@ -202,6 +202,14 @@ def _reb_summary():
         return None
 
 
+def _applyhome_summary():
+    try:
+        from . import applyhome
+        return applyhome.summary()
+    except Exception:
+        return None
+
+
 def _kosis_summary():
     try:
         from . import kosis
@@ -266,6 +274,11 @@ def build_context():
                              "trade_n": sum(1 for r in mine if r["kind"] == "trade" and ym(r["date"]) == m
                                             and not r.get("cancelled"))})
             s["move_in"] = {"start": start, "rows": rows}
+        try:
+            from . import kapt
+            s["kapt"] = kapt.load().get(c["name"])
+        except Exception:
+            s["kapt"] = None
         cards.append(s)
 
     # 두 단지 비교: 분기별 3.3㎡당 중간값
@@ -318,7 +331,7 @@ def build_context():
     return {
         "now": now, "meta": meta, "cards": cards,
         "chart": {"months": all_months, "series": series},
-        "compares": compares, "predictions": predictions, "reb": _reb_summary(), "kosis": _kosis_summary(),
+        "compares": compares, "predictions": predictions, "reb": _reb_summary(), "kosis": _kosis_summary(), "applyhome": _applyhome_summary(),
         "volume": {"rows": volume, "months": all_months, "total": total_series,
                    "incomplete": sorted(incomplete), "recent3": recent3,
                    "span": (complete[0], complete[-1]) if complete else ("", "")},
