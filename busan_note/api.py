@@ -110,10 +110,14 @@ def call(kind, lawd_cd, deal_ymd, service_key, page=1, rows=1000, timeout=30):
         "pageNo": page,
         "numOfRows": rows,
     }
-    try:
-        r = requests.get(ENDPOINTS[kind], params=params, timeout=timeout)
-    except requests.RequestException as e:
-        raise ApiError("네트워크 오류: " + mask(e))
+    for attempt, wait in enumerate((5, 15, None)):
+        try:
+            r = requests.get(ENDPOINTS[kind], params=params, timeout=timeout)
+            break
+        except requests.RequestException as e:
+            if wait is None:
+                raise ApiError(f"네트워크 오류({attempt + 1}회 시도): " + mask(e))
+            time.sleep(wait)
     if r.status_code != 200:
         try:
             parse_response(r.content)
