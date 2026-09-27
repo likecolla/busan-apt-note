@@ -1,0 +1,18 @@
+# 비밀 키 — 절대 커밋하지 않음
+.env
+.env.*
+!.env.example
+
+# 파이썬
+.venv/
+__pycache__/
+*.pyc
+
+# 로그·임시
+logs/
+*.log
+.DS_Store
+
+# 로컬 도구 설정
+.claude/
+tools/

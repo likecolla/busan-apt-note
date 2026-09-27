@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>부산 대단지 실거래 노트</title>
+<meta name="description" content="부산 관심 단지 6곳의 매매·분양권·전월세 실거래 기록">
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F4F3;--surface:#FBFCFB;--text:#1E2733;--muted:#5B6673;--line:#D5DBDE;
+--accent:#1B3A5C;--accent2:#5E9C97;--point:#D8962B;--up:#B4412E;--tag-bg:#E6EAEA;
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--bg:#12171D;--surface:#1A2129;--text:#E4E8EC;--muted:#9AA6B2;--line:#2C3642;
+--accent:#9CC0E6;--accent2:#7FC0B9;--point:#E8AC4E;--up:#E27A66;--tag-bg:#26303B;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#2f9a2f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12171D;--surface:#1A2129;--text:#E4E8EC;--muted:#9AA6B2;--line:#2C3642;
+--accent:#9CC0E6;--accent2:#7FC0B9;--point:#E8AC4E;--up:#E27A66;--tag-bg:#26303B;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#2f9a2f;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+font-size:15px;line-height:1.6;overflow-x:hidden}
+main{max-width:760px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left)) 48px max(16px,env(safe-area-inset-right))}
+h1,h2,h3{font-family:"Gowun Batang","Nanum Myeongjo","AppleMyungjo",serif;color:var(--accent);line-height:1.3;margin:0}
+h1{font-size:1.75rem}
+h2{font-size:1.3rem;margin:36px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+h3{font-size:1.15rem}
+h4{font-size:.95rem;margin:18px 0 8px}
+.sub,.unit{color:var(--muted);font-weight:400}
+.unit{font-size:.85em}
+.masthead p{margin:6px 0 0}
+.summary{display:inline-block;margin-top:12px;padding:6px 12px;border-radius:999px;
+background:var(--surface);border:1px solid var(--line);font-weight:600}
+.summary b{color:var(--point)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin:0 0 16px}
+.card header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px}
+.chip{font-size:.8rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 10px}
+.stats{display:grid;gap:10px;margin-top:12px}
+.stat{border-left:3px solid var(--accent2);padding-left:10px}
+.label{font-size:.8rem;color:var(--muted)}
+.big{font-size:1.1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+table{border-collapse:collapse;width:100%;font-size:.85rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 5px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:.78rem}
+td.num{text-align:right}
+table.compact th,table.compact td{padding:5px 6px}
+tr.cancelled td{color:var(--muted)}
+tr.cancelled td.num{text-decoration:line-through}
+.tag{display:inline-block;font-size:.72rem;padding:0 6px;border-radius:4px;background:var(--tag-bg);color:var(--muted);margin-right:2px}
+.tag.new{background:var(--point);color:#1E2733;font-weight:600}
+.tag.cancel{background:transparent;border:1px solid var(--up);color:var(--up)}
+.tag.direct{background:transparent;border:1px solid var(--accent2);color:var(--accent2)}
+.chart-box{position:relative;height:320px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--accent);font-size:.9rem}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+footer ul{padding-left:18px;margin:6px 0}
+.fail h4{color:var(--up)}
+</style>
+</head>
+<body>
+<main>
+<header class="masthead">
+  <h1>부산 대단지 실거래 노트</h1>
+  <p class="sub">마지막 갱신 2026-09-27 16:30 (한국시간) · 계약월 2026-04 ~ 2026-09</p>
+  <div class="summary">새로 신고된 거래 <b>0건</b></div>
+</header>
+
+<h2>핵심 6곳</h2>
+<p class="sub">84㎡형 = 전용 75~90㎡. 해제된 거래는 가격 계산에서 빼고 표에만 취소선으로 남깁니다. 직거래는 계산에 포함합니다.</p>
+
+<article class="card">
+  <header><h3>르엘 리버파크 센텀</h3><span class="chip">해운대구 · 분양권 기준</span></header>
+  <div class="stats">
+    <div class="stat"><div class="label">84㎡형 최근 거래</div><div class="big">1,335,340,000원 <span class="unit">(13억 3,534만)</span></div><div class="sub">2026-09-10 · 11층 · 전용 84.93㎡</div></div>
+    <div class="stat"><div class="label">84㎡형 최근 3개월 중간값</div><div>1,389,350,000원 <span class="unit">(13억 8,935만)</span> <span class="sub">(3건)</span></div></div>
+    
+  </div>
+  <h4>최근 분양권 거래 5건 <span class="sub">(6개월 전체 67건)</span></h4>
+  <div class="scroll"><table>
+    <thead><tr><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>
+    <tbody><tr><td>26.09.18</td><td>154.9</td><td>23층</td><td class='num'>2,746,530,000원<br><span class="unit">(27억 4,653만)</span></td><td><span class="tag direct">직거래</span></td></tr><tr><td>26.09.10</td><td>84.9</td><td>11층</td><td class='num'>1,335,340,000원<br><span class="unit">(13억 3,534만)</span></td><td></td></tr><tr><td>26.09.04</td><td>126.0</td><td>43층</td><td class='num'>2,239,000,000원<br><span class="unit">(22억 3,900만)</span></td><td><span class="tag direct">직거래</span></td></tr><tr><td>26.08.26</td><td>125.9</td><td>37층</td><td class='num'>2,248,950,000원<br><span class="unit">(22억 4,895만)</span></td><td></td></tr><tr><td>26.08.17</td><td>154.9</td><td>10층</td><td class='num'>2,668,000,000원<br><span class="unit">(26억 6,800만)</span></td><td></td></tr></tbody>
+  </table></div>
+  
+</article>
+<article class="card">
+  <header><h3>써밋 리미티드 남천</h3><span class="chip">수영구 · 분양권 기준</span></header>
+  <div class="stats">
+    <div class="stat"><div class="label">84㎡형 최근 거래</div><div class="big">1,607,000,000원 <span class="unit">(16억 700만)</span></div><div class="sub">2026-09-11 · 20층 · 전용 84.63㎡</div></div>
+    <div class="stat"><div class="label">84㎡형 최근 3개월 중간값</div><div>1,539,900,000원 <span class="unit">(15억 3,990만)</span> <span class="sub">(4건)</span></div></div>
+    
+  </div>
+  <h4>최근 분양권 거래 5건 <span class="sub">(6개월 전체 73건)</span></h4>
+  <div class="scroll"><table>
+    <thead><tr><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>
+    <tbody><tr><td>26.09.20</td><td>182.0</td><td>13층</td><td class='num'>4,068,000,000원<br><span class="unit">(40억 6,800만)</span></td><td></td></tr><tr><td>26.09.20</td><td>122.2</td><td>29층</td><td class='num'>2,403,000,000원<br><span class="unit">(24억 300만)</span></td><td></td></tr><tr><td>26.09.15</td><td>144.3</td><td>16층</td><td class='num'>3,236,600,000원<br><span class="unit">(32억 3,660만)</span></td><td></td></tr><tr><td>26.09.13</td><td>122.2</td><td>6층</td><td class='num'>1,889,900,000원<br><span class="unit">(18억 8,990만)</span></td><td></td></tr><tr><td>26.09.11</td><td>84.6</td><td>20층</td><td class='num'>1,607,000,000원<br><span class="unit">(16억 700만)</span></td><td></td></tr></tbody>
+  </table></div>
+  
+</article>
+<article class="card">
+  <header><h3>대연 디아이엘</h3><span class="chip">남구 · 분양권 기준</span></header>
+  <div class="stats">
+    <div class="stat"><div class="label">84㎡형 최근 거래</div><div class="big">885,100,000원 <span class="unit">(8억 8,510만)</span></div><div class="sub">2026-09-22 · 4층 · 전용 84.98㎡</div></div>
+    <div class="stat"><div class="label">84㎡형 최근 3개월 중간값</div><div>882,750,000원 <span class="unit">(8억 8,275만)</span> <span class="sub">(27건)</span></div></div>
+    
+  </div>
+  <h4>최근 분양권 거래 5건 <span class="sub">(6개월 전체 81건)</span></h4>
+  <div class="scroll"><table>
+    <thead><tr><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>
+    <tbody><tr><td>26.09.22</td><td>85.0</td><td>4층</td><td class='num'>885,100,000원<br><span class="unit">(8억 8,510만)</span></td><td></td></tr><tr><td>26.09.13</td><td>85.0</td><td>5층</td><td class='num'>987,940,000원<br><span class="unit">(9억 8,794만)</span></td><td></td></tr><tr><td>26.09.11</td><td>85.0</td><td>9층</td><td class='num'>923,300,000원<br><span class="unit">(9억 2,330만)</span></td><td></td></tr><tr><td>26.09.10</td><td>85.0</td><td>20층</td><td class='num'>918,200,000원<br><span class="unit">(9억 1,820만)</span></td><td></td></tr><tr><td>26.09.10</td><td>85.0</td><td>22층</td><td class='num'>810,200,000원<br><span class="unit">(8억 1,020만)</span></td><td><span class="tag direct">직거래</span></td></tr></tbody>
+  </table></div>
+  
+</article>
+<article class="card">
+  <header><h3>드파인 광안</h3><span class="chip">수영구 · 분양권 기준</span></header>
+  <div class="stats">
+    <div class="stat"><div class="label">84㎡형 최근 거래</div><div class="big">1,069,800,000원 <span class="unit">(10억 6,980만)</span></div><div class="sub">2026-09-17 · 30층 · 전용 78.28㎡</div></div>
+    <div class="stat"><div class="label">84㎡형 최근 3개월 중간값</div><div>1,093,650,000원 <span class="unit">(10억 9,365만)</span> <span class="sub">(35건)</span></div></div>
+    
+  </div>
+  <h4>최근 분양권 거래 5건 <span class="sub">(6개월 전체 120건)</span></h4>
+  <div class="scroll"><table>
+    <thead><tr><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>
+    <tbody><tr><td>26.09.17</td><td>78.3</td><td>30층</td><td class='num'>1,069,800,000원<br><span class="unit">(10억 6,980만)</span></td><td></td></tr><tr><td>26.09.12</td><td>84.9</td><td>10층</td><td class='num'>1,177,520,000원<br><span class="unit">(11억 7,752만)</span></td><td></td></tr><tr><td>26.09.09</td><td>84.9</td><td>27층</td><td class='num'>1,207,020,000원<br><span class="unit">(12억 702만)</span></td><td></td></tr><tr><td>26.09.07</td><td>78.9</td><td>31층</td><td class='num'>1,075,120,000원<br><span class="unit">(10억 7,512만)</span></td><td></td></tr><tr><td>26.09.04</td><td>84.9</td><td>2층</td><td class='num'>1,037,400,000원<br><span class="unit">(10억 3,740만)</span></td><td></td></tr></tbody>
+  </table></div>
+  <h4>입주장 관찰 <span class="sub">(2026-06 입주 시작)</span></h4><p class="sub">아직 매매·전월세 신고가 없습니다. 보존등기 전에는 거래가 분양권으로 신고되고, 입주 뒤 전세 계약이 신고되면 이 표에 나타납니다.</p><div class="scroll"><table><thead><tr><th>월</th><th>전세 건수</th><th>전세 중간값(84㎡형)</th><th>월세 건수</th><th>매매 건수</th></tr></thead><tbody><tr><td>2026-06</td><td class="num">0건</td><td class="num">-</td><td class="num">0건</td><td class="num">0건</td></tr><tr><td>2026-07</td><td class="num">0건</td><td class="num">-</td><td class="num">0건</td><td class="num">0건</td></tr><tr><td>2026-08</td><td class="num">0건</td><td class="num">-</td><td class="num">0건</td><td class="num">0건</td></tr><tr><td>2026-09</td><td class="num">0건</td><td class="num">-</td><td class="num">0건</td><td class="num">0건</td></tr></tbody></table></div>
+</article>
+<article class="card">
+  <header><h3>동래래미안아이파크</h3><span class="chip">동래구 · 매매 기준</span></header>
+  <div class="stats">
+    <div class="stat"><div class="label">84㎡형 최근 거래</div><div class="big">920,000,000원 <span class="unit">(9억 2,000만)</span></div><div class="sub">2026-09-06 · 18층 · 전용 75.52㎡</div></div>
+    <div class="stat"><div class="label">84㎡형 최근 3개월 중간값</div><div>980,000,000원 <span class="unit">(9억 8,000만)</span> <span class="sub">(14건)</span></div></div>
+    <div class="stat"><div class="label">전세가율 (84㎡형, 최근 3개월)</div><div><strong>48%</strong> <span class="sub">= 전세 중간값 472,500,000원 (4억 7,250만) ÷ 매매 중간값 980,000,000원 (9억 8,000만) · 전세 23건</span></div></div>
+  </div>
+  <h4>최근 매매 거래 5건 <span class="sub">(6개월 전체 68건)</span></h4>
+  <div class="scroll"><table>
+    <thead><tr><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>
+    <tbody><tr><td>26.09.07</td><td>60.0</td><td>12층</td><td class='num'>810,000,000원<br><span class="unit">(8억 1,000만)</span></td><td></td></tr><tr><td>26.09.06</td><td>75.5</td><td>18층</td><td class='num'>920,000,000원<br><span class="unit">(9억 2,000만)</span></td><td></td></tr><tr><td>26.09.04</td><td>49.9</td><td>9층</td><td class='num'>445,000,000원<br><span class="unit">(4억 4,500만)</span></td><td></td></tr><tr><td>26.09.02</td><td>85.0</td><td>26층</td><td class='num'>1,150,000,000원<br><span class="unit">(11억 5,000만)</span></td><td></td></tr><tr><td>26.08.29</td><td>85.0</td><td>3층</td><td class='num'>950,000,000원<br><span class="unit">(9억 5,000만)</span></td><td></td></tr></tbody>
+  </table></div>
+  
+</article>
+<article class="card">
+  <header><h3>레이카운티</h3><span class="chip">연제구 · 매매 기준</span></header>
+  <div class="stats">
+    <div class="stat"><div class="label">84㎡형 최근 거래</div><div class="big">1,040,000,000원 <span class="unit">(10억 4,000만)</span></div><div class="sub">2026-09-19 · 16층 · 전용 84.83㎡</div></div>
+    <div class="stat"><div class="label">84㎡형 최근 3개월 중간값</div><div>1,033,000,000원 <span class="unit">(10억 3,300만)</span> <span class="sub">(41건)</span></div></div>
+    <div class="stat"><div class="label">전세가율 (84㎡형, 최근 3개월)</div><div><strong>51%</strong> <span class="sub">= 전세 중간값 530,000,000원 (5억 3,000만) ÷ 매매 중간값 1,033,000,000원 (10억 3,300만) · 전세 21건</span></div></div>
+  </div>
+  <h4>최근 매매 거래 5건 <span class="sub">(6개월 전체 143건)</span></h4>
+  <div class="scroll"><table>
+    <thead><tr><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>
+    <tbody><tr><td>26.09.19</td><td>84.8</td><td>16층</td><td class='num'>1,040,000,000원<br><span class="unit">(10억 4,000만)</span></td><td></td></tr><tr><td>26.09.19</td><td>49.9</td><td>14층</td><td class='num'>437,000,000원<br><span class="unit">(4억 3,700만)</span></td><td></td></tr><tr><td>26.09.17</td><td>84.8</td><td>7층</td><td class='num'>1,165,000,000원<br><span class="unit">(11억 6,500만)</span></td><td></td></tr><tr><td>26.09.17</td><td>60.0</td><td>4층</td><td class='num'>720,000,000원<br><span class="unit">(7억 2,000만)</span></td><td></td></tr><tr><td>26.09.13</td><td>84.8</td><td>12층</td><td class='num'>785,000,000원<br><span class="unit">(7억 8,500만)</span></td><td></td></tr></tbody>
+  </table></div>
+  
+</article>
+
+<h2>가격 흐름 <span class="sub">(84㎡형 월별 중간값)</span></h2>
+<p class="sub">분양권 단지는 분양권 거래가(분양가+웃돈), 나머지는 매매가입니다. 거래가 없는 달은 선을 이어 그립니다.</p>
+<div class="chart-box"><canvas id="trend" role="img" aria-label="단지별 84㎡형 월별 중간값 꺾은선 그래프"></canvas></div>
+<p id="chart-fallback" class="sub" hidden>그래프를 불러오지 못했습니다. 아래 표를 참고하세요.</p>
+<details><summary>표로 보기</summary><div class="scroll"><table class="compact"><thead><tr><th>단지</th><th>26-04</th><th>26-05</th><th>26-06</th><th>26-07</th><th>26-08</th><th>26-09</th></tr></thead><tbody><tr><td>르엘 리버파크 센텀<br><span class="unit">분양권</span></td><td class="num">12억 9,900만<br><span class=unit>1건</span></td><td class="num">13억 6,005만<br><span class=unit>2건</span></td><td class="num">13억 9,585만<br><span class=unit>2건</span></td><td class="num">13억 9,972만<br><span class=unit>2건</span></td><td class="num">-</td><td class="num">13억 3,534만<br><span class=unit>1건</span></td></tr><tr><td>써밋 리미티드 남천<br><span class="unit">분양권</span></td><td class="num">15억 1,460만<br><span class=unit>5건</span></td><td class="num">15억 7,580만<br><span class=unit>3건</span></td><td class="num">16억 5,743만<br><span class=unit>1건</span></td><td class="num">15억 3,870만<br><span class=unit>1건</span></td><td class="num">14억 6,448만<br><span class=unit>2건</span></td><td class="num">16억 700만<br><span class=unit>1건</span></td></tr><tr><td>대연 디아이엘<br><span class="unit">분양권</span></td><td class="num">8억 5,602만<br><span class=unit>9건</span></td><td class="num">8억 5,667만<br><span class=unit>7건</span></td><td class="num">8억 4,892만<br><span class=unit>8건</span></td><td class="num">8억 5,330만<br><span class=unit>10건</span></td><td class="num">9억 2,375만<br><span class=unit>7건</span></td><td class="num">9억 2,499만<br><span class=unit>10건</span></td></tr><tr><td>드파인 광안<br><span class="unit">분양권</span></td><td class="num">11억 9,050만<br><span class=unit>11건</span></td><td class="num">11억 3,108만<br><span class=unit>33건</span></td><td class="num">11억 8,051만<br><span class=unit>16건</span></td><td class="num">10억 7,947만<br><span class=unit>14건</span></td><td class="num">11억 2,670만<br><span class=unit>14건</span></td><td class="num">10억 7,512만<br><span class=unit>7건</span></td></tr><tr><td>동래래미안아이파크<br><span class="unit">매매</span></td><td class="num">10억 6,000만<br><span class=unit>9건</span></td><td class="num">9억 6,950만<br><span class=unit>10건</span></td><td class="num">10억<br><span class=unit>1건</span></td><td class="num">10억 750만<br><span class=unit>4건</span></td><td class="num">9억 7,750만<br><span class=unit>8건</span></td><td class="num">10억 3,500만<br><span class=unit>2건</span></td></tr><tr><td>레이카운티<br><span class="unit">매매</span></td><td class="num">10억 7,150만<br><span class=unit>14건</span></td><td class="num">10억 4,000만<br><span class=unit>14건</span></td><td class="num">10억 2,000만<br><span class=unit>7건</span></td><td class="num">10억 1,000만<br><span class=unit>19건</span></td><td class="num">10억 3,300만<br><span class=unit>11건</span></td><td class="num">10억 3,500만<br><span class=unit>11건</span></td></tr></tbody></table></div></details>
+
+<h2>이번에 새로 신고된 거래</h2>
+<p class="sub">이번 실행은 분양권 자료의 첫 수집이라 기준선으로 저장했습니다. 다음 갱신부터 새로 신고된 거래가 여기에 표시됩니다.</p>
+
+<footer>
+  <p>자료 출처: 국토교통부 실거래가 공개시스템 API (공공데이터포털)</p>
+  <ul>
+    <li>실거래는 계약 후 30일 안에 신고되므로 최근 1~2개월 자료는 계속 늘어납니다. 갱신할 때마다 최근 3개월치를 다시 받습니다.</li>
+    <li>학습용 자료이며 투자 판단의 근거가 아닙니다.</li>
+  </ul>
+  <p>갱신 실패 항목: 없음</p>
+</footer>
+</main>
+<script id="chart-data" type="application/json">{"months": ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"], "series": [{"name": "르엘 리버파크 센텀", "kind": "분양권", "points": [1299000000, 1360050000, 1395850000, 1399720000, null, 1335340000], "counts": [1, 2, 2, 2, 0, 1]}, {"name": "써밋 리미티드 남천", "kind": "분양권", "points": [1514600000, 1575800000, 1657430000, 1538700000, 1464480000, 1607000000], "counts": [5, 3, 1, 1, 2, 1]}, {"name": "대연 디아이엘", "kind": "분양권", "points": [856020000, 856670000, 848920000, 853300000, 923750000, 924990000], "counts": [9, 7, 8, 10, 7, 10]}, {"name": "드파인 광안", "kind": "분양권", "points": [1190500000, 1131080000, 1180510000, 1079470000, 1126700000, 1075120000], "counts": [11, 33, 16, 14, 14, 7]}, {"name": "동래래미안아이파크", "kind": "매매", "points": [1060000000, 969500000, 1000000000, 1007500000, 977500000, 1035000000], "counts": [9, 10, 1, 4, 8, 2]}, {"name": "레이카운티", "kind": "매매", "points": [1071500000, 1040000000, 1020000000, 1010000000, 1033000000, 1035000000], "counts": [14, 14, 7, 19, 11, 11]}]}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+  var data = JSON.parse(document.getElementById('chart-data').textContent);
+  function unit(won){ if(won==null) return '-'; var man=Math.floor((won+5000)/10000);
+    var eok=Math.floor(man/10000), rest=man%10000, p=[];
+    if(eok) p.push(eok.toLocaleString('ko-KR')+'억'); if(rest) p.push(rest.toLocaleString('ko-KR')+'만');
+    return p.join(' ')||'0'; }
+  function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  if(!window.Chart){ document.getElementById('chart-fallback').hidden=false; return; }
+  var chart;
+  function draw(){
+    var muted=css('--muted'), line=css('--line'), surface=css('--surface');
+    var ds = data.series.map(function(s,i){ var c=css('--s'+(i+1));
+      return {label:s.name+' ('+s.kind+')', data:s.points, borderColor:c, backgroundColor:c,
+        borderWidth:2, pointRadius:4, pointHoverRadius:6, pointBorderColor:surface, pointBorderWidth:2,
+        spanGaps:true, tension:0.2, counts:s.counts}; });
+    if(chart) chart.destroy();
+    chart = new Chart(document.getElementById('trend'), {type:'line',
+      data:{labels:data.months.map(function(m){return m.slice(2).replace('-','.');}), datasets:ds},
+      options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+        plugins:{legend:{position:'bottom', labels:{color:muted, boxWidth:10, boxHeight:10, font:{size:11}}},
+          tooltip:{callbacks:{label:function(c){ if(c.raw==null) return null;
+            var n=c.dataset.counts[c.dataIndex]; return c.dataset.label+': '+unit(c.raw)+' ('+n+'건)'; }}}},
+        scales:{x:{ticks:{color:muted}, grid:{display:false}, border:{color:line}},
+          y:{ticks:{color:muted, callback:function(v){return (v/1e8).toFixed(1)+'억';}},
+             grid:{color:line}, border:{display:false}}}}});
+  }
+  draw();
+  if(window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+})();
+</script>
+</body>
+</html>
