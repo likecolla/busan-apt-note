@@ -11,6 +11,10 @@ metric
   count        거래 건수(해제 제외)
   jeonse_count 전세 신고 건수
   gap_ppy      complex 와 other 의 3.3㎡당 중간값 차이 비율(complex ÷ other − 1)
+  reb_sale     부동산원 주간 매매지수의 기간 변동률(%). complex 대신 region(예: "부산", "남구")
+  reb_jeonse   부동산원 주간 전세지수의 기간 변동률(%)
+
+lag: 기간이 끝난 뒤 채점까지 기다릴 개월 수. 실거래는 신고 기한 때문에 기본 2, 부동산원 지수는 0.
 """
 import json
 import operator
@@ -36,8 +40,28 @@ def _deals(recs, kind, period):
     return [r for r in recs if r["kind"] == kind and not r.get("cancelled") and _in_period(r, period)]
 
 
+def _reb_change(region, kind, period):
+    """주간 지수에서 기간 직전 주 대비 기간 마지막 주의 변동률(%)과 기간 안 주 수."""
+    path = api.ROOT / "data" / "reb" / "weekly.json"
+    if not path.exists():
+        return None, 0
+    data = json.loads(path.read_text(encoding="utf-8"))
+    weeks = sorted((v["date"], v.get(kind)) for v in data.get(region, {}).get("weeks", {}).values() if v.get(kind))
+    before = [v for d, v in weeks if d[:7] < period[0]]
+    inside = [v for d, v in weeks if period[0] <= d[:7] <= period[1]]
+    if not before or not inside:
+        return None, len(inside)
+    return (inside[-1] / before[-1] - 1) * 100, len(inside)
+
+
+def lag_of(p):
+    return p.get("lag", 0 if p["metric"].startswith("reb_") else REPORT_LAG_MONTHS)
+
+
 def measure(p, recs_by_name, kind_by_name):
     """예측 기간의 실제 값과 건수."""
+    if p["metric"] in ("reb_sale", "reb_jeonse"):
+        return _reb_change(p["region"], p["metric"][4:], p["period"])
     recs = recs_by_name.get(p["complex"], [])
     kind = p.get("kind") or kind_by_name.get(p["complex"], "trade")
     m = p["metric"]
@@ -69,9 +93,9 @@ def status(p, now_label, actual, n):
         return "대기"
     if now_label <= end:
         return "진행 중"
-    if now_label <= analyze.shift_months(end, REPORT_LAG_MONTHS):
+    if now_label <= analyze.shift_months(end, lag_of(p)):
         return "신고 기다림"
-    counts = p["metric"] in ("count", "jeonse_count")
+    counts = p["metric"] in ("count", "jeonse_count", "reb_sale", "reb_jeonse")
     if actual is None or (not counts and n < MIN_N):
         return "표본 부족"
     return "적중" if OPS[p["op"]](actual, p["value"]) else "빗나감"
@@ -82,7 +106,7 @@ def evaluate(recs_by_name, kind_by_name, now_label):
     for p in load():
         actual, n = measure(p, recs_by_name, kind_by_name)
         out.append(dict(p, actual=actual, n=n, status=status(p, now_label, actual, n),
-                        score_after=analyze.shift_months(p["period"][1], REPORT_LAG_MONTHS + 1)))
+                        score_after=analyze.shift_months(p["period"][1], lag_of(p) + 1)))
     return out
 
 
@@ -97,4 +121,6 @@ def fmt_value(metric, v):
         return f"3.3㎡당 {v / 10000:,.0f}만원"
     if metric == "gap_ppy":
         return f"{v * 100:+.1f}%"
+    if metric.startswith("reb_"):
+        return f"{v:+.2f}%"
     return f"{v:,}건"

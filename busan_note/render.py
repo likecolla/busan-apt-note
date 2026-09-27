@@ -378,6 +378,31 @@ def presale_section(ctx):
 <p class="sub">재개발·재건축 단지는 조합원 물량이 빠져 있어 실제 입주 세대보다 적게 잡힙니다. 미달은 1·2순위 접수가 공급보다 적었던 주택형이 있었다는 뜻으로, 이후 무순위·계약 단계에서 채워질 수 있습니다.</p>'''
 
 
+def routine_box(ctx):
+    """월·목 5분 루틴: 볼 순서와 이번 갱신의 한 줄 요약."""
+    steps = []
+    rows = ctx.get("reb") or []
+    busan = next((r for r in rows if r["level"] == 1), None)
+    if busan:
+        up = sum(1 for r in rows if r["level"] == 3 and r["name"] in WATCH_GU and (r["sale_wk"] or 0) > 0)
+        st = busan["sale_streak"]
+        steps.append(("temp", "구별 온도", f'부산 매매 {busan["sale_wk"]:+.2f}%({st[1]}주 연속 {st[0]}), 관심 6개 구 중 {up}곳 상승'))
+    nw = len(ctx["new_watch"])
+    steps.append(("new", "새로 신고된 거래", f'{ctx["new_total"]:,}건, 그중 핵심 6곳 {nw}건'))
+    few_n = sum(1 for c in ctx["cards"] if c["low_sample"])
+    steps.append(("core", "핵심 6곳 카드", f'3개월 중간값과 1년 전 대비를 보고, "표본 적음" {few_n}곳은 한두 건으로 판단하지 않기'))
+    preds = ctx.get("predictions") or []
+    live = sum(1 for p in preds if p["status"] in ("진행 중", "신고 기다림"))
+    done = [p for p in preds if p["status"] in ("적중", "빗나감")]
+    hit = sum(1 for p in done if p["status"] == "적중")
+    nxt = min((p["score_after"] for p in preds if p["status"] not in ("적중", "빗나감", "표본 부족")), default="")
+    steps.append(("pred", "예측 기록장", f'진행 중 {live}개 · 채점 {len(done)}개(적중 {hit})' + (f' · 다음 채점 {nxt}' if nxt else "")))
+    steps.append(("supply", "공급과 수요 · 분양·청약", "월 1회: 미분양, 착공, 인구 이동, 새 분양 경쟁률"))
+    lis = "".join(f'<li><a href="#{a}">{e(t)}</a><span class="sub"> — {e(d)}</span></li>' for a, t, d in steps)
+    return f'''<nav class="routine" aria-label="월·목 5분 루틴"><h2>월·목 5분 루틴</h2><ol>{lis}</ol>
+<p class="sub">위에서부터 차례로 봅니다. 숫자 하나로 결론을 내리지 말고, 몇 주째 같은 방향인지와 표본 수를 함께 보세요.</p></nav>'''
+
+
 STATUS_CLASS = {"적중": "hit", "빗나감": "miss", "표본 부족": "", "진행 중": "wait", "신고 기다림": "wait", "대기": ""}
 
 
@@ -484,6 +509,12 @@ b.up{color:var(--up)} b.down{color:var(--s1)}
 .tag.cold{background:transparent;border:1px solid var(--s1);color:var(--s1)}
 .chart-box.small{height:220px}
 .kapt{margin:6px 0 0;font-size:.82rem;color:var(--muted)}
+.routine{margin-top:20px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--point);border-radius:10px;padding:12px 14px}
+.routine h2{margin:0 0 6px;padding:0;border:0;font-size:1.05rem}
+.routine ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.9rem}
+.routine a{color:var(--accent);font-weight:600}
+.routine p{margin:8px 0 0}
+html{scroll-padding-top:12px}
 .div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .drow{display:grid;grid-template-columns:64px 1fr 1fr 52px;align-items:center;margin:4px 0;font-size:.85rem}
 .drow .neg,.drow .pos{height:14px;position:relative}
@@ -661,8 +692,9 @@ def build():
   <p class="sub">마지막 갱신 {e(last)} (한국시간) · 계약월 {e(r0)} ~ {e(r1)}</p>
   <div class="summary">새로 신고된 거래 <b>{ctx["new_total"]:,}건</b></div>
 </header>
+{routine_box(ctx)}
 
-<h2>핵심 6곳</h2>
+<h2 id="core">핵심 6곳</h2>
 <div class="guide">
   <p><b>읽는 법</b> 84㎡형 = 전용 75~90㎡. 해제된 거래는 계산에서 빼고 표에만 취소선으로 남깁니다. 직거래는 계산에 포함합니다.</p>
   <p><b>3.3㎡당 가격</b>은 면적이 달라도 비교할 수 있게 거래가를 평 단위로 나눈 값입니다. 75㎡대와 84㎡대가 섞인 단지는 이 값이 더 정확합니다.</p>
@@ -687,13 +719,13 @@ def build():
 <p class="sub">노트에서 자주 비교하는 단지쌍입니다. 면적 차이를 없애려고 3.3㎡당 가격으로 봅니다. 단지쌍은 config/watchlist.json의 compare에서 바꿀 수 있습니다.</p>
 {compare_section(ctx, None)}
 
-<h2>구별 온도 <span class="sub">한국부동산원 주간 지수</span></h2>
+<h2 id="temp">구별 온도 <span class="sub">한국부동산원 주간 지수</span></h2>
 {temperature_section(ctx)}
 
-<h2>분양·청약 <span class="sub">청약홈</span></h2>
+<h2 id="presale">분양·청약 <span class="sub">청약홈</span></h2>
 {presale_section(ctx)}
 
-<h2>공급과 수요 <span class="sub">KOSIS</span></h2>
+<h2 id="supply">공급과 수요 <span class="sub">KOSIS</span></h2>
 {supply_section(ctx)}
 
 <h2>거래량 온도</h2>
@@ -702,7 +734,7 @@ def build():
 <h2 id="pred">예측 기록장</h2>
 {prediction_section(ctx)}
 
-<h2>이번에 새로 신고된 거래</h2>
+<h2 id="new">이번에 새로 신고된 거래</h2>
 {new_section(ctx)}
 
 <footer>
