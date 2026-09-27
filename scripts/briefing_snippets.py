@@ -1,0 +1,149 @@
+"""공부노트·특별호 아티팩트에 붙일 HTML 조각을 만든다.
+
+사용법:
+  .venv/bin/python scripts/briefing_snippets.py 2026-09-17 2026-09-23 > 조각.json
+인자: '이번 주 거래' 계약일 시작·끝(생략하면 최근 7일).
+출력: {"core": ..., "week": ..., "movein": ..., "volume": ..., "gap": ..., "asof": ...} (각 값은 HTML 문자열)
+두 페이지의 기존 CSS 클래스(scroll, num, note)를 그대로 쓴다.
+"""
+import json
+import sys
+from collections import defaultdict
+from datetime import date, timedelta
+from html import escape
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from busan_note import analyze, collect  # noqa: E402
+from busan_note.money import format_won, korean_unit  # noqa: E402
+
+GU_ORDER = ["26350", "26500", "26290", "26230", "26260", "26470"]
+GU_SHORT = {"26350": "해운대", "26500": "수영", "26290": "남구", "26230": "부산진",
+            "26260": "동래", "26470": "연제"}
+
+
+def e(x):
+    return escape(str(x))
+
+
+def money2(won):
+    """노트 표기: 1,298,000,000원<br>(12억 9,800만)"""
+    if not won:
+        return "–"
+    return f"{won:,}원<br>({korean_unit(won)})"
+
+
+def d_short(iso):
+    y, m, d = iso.split("-")
+    return f"{int(m)}. {int(d)}."
+
+
+def area_floor(r):
+    return f'{r["area"]:.1f}㎡ · {e(r["floor"])}층'
+
+
+def core_table(ctx):
+    rows = []
+    for c in ctx["cards"]:
+        l = c["latest84"]
+        latest = (f'{money2(l["price"])}<br><small>{d_short(l["date"])} · {area_floor(l)}</small>'
+                  if l else "–")
+        med = f'{money2(c["med3"])}<br><small>{c["n3"]}건</small>' if c["med3"] else "–"
+        rows.append(f'<tr><td><b>{e(c["name"])}</b><br><small>{e(c["kind_ko"])}</small></td>'
+                    f'<td class="num">{latest}</td><td class="num">{med}</td>'
+                    f'<td class="num">{c["total"]}건</td></tr>')
+    return ('<div class="scroll"><table>'
+            '<tr><th>단지</th><th>84㎡형 최근 거래</th><th>최근 3개월 중간값</th><th>6개월 거래</th></tr>'
+            + "".join(rows) + "</table></div>")
+
+
+def week_table(recs, start, end, n=10):
+    wk = [r for r in recs if r["kind"] == "trade" and not r["cancelled"] and start <= r["date"] <= end]
+    wk.sort(key=lambda r: r["price"] or 0, reverse=True)
+    rows = "".join(
+        f'<tr><td>{e(GU_SHORT[r["lawd"]])} {e(r["umd"])}</td><td>{e(r["apt"])}</td><td>{d_short(r["date"])}</td>'
+        f'<td>{area_floor(r)}</td><td class="num">{money2(r["price"])}</td>'
+        f'<td>{"직거래" if r["direct"] else ""}</td></tr>'
+        for r in wk[:n])
+    return ('<div class="scroll"><table>'
+            '<tr><th>지역</th><th>단지</th><th>계약일</th><th>전용·층</th><th>거래가</th><th>비고</th></tr>'
+            + rows + "</table></div>"), len(wk)
+
+
+def movein_table(ctx):
+    c = next(c for c in ctx["cards"] if c.get("move_in"))
+    rows = "".join(
+        f'<tr><td>{e(m["month"].replace("-", ". "))}.</td><td class="num">{m["jeonse_n"]}건</td>'
+        f'<td class="num">{money2(m["jeonse_med84"]) if m["jeonse_med84"] else "–"}</td>'
+        f'<td class="num">{m["wolse_n"]}건</td><td class="num">{m["trade_n"]}건</td></tr>'
+        for m in c["move_in"]["rows"])
+    return ('<div class="scroll"><table>'
+            '<tr><th>계약월</th><th>전세</th><th>전세 중간값(84㎡형)</th><th>월세</th><th>매매</th></tr>'
+            + rows + "</table></div>"), c
+
+
+def gu_stats(recs, now):
+    months = collect.months_back(6, now.date())
+    labels = [f"{m[:4]}-{m[4:]}" for m in months]
+    last3 = set(labels[-3:])
+    cnt_t = defaultdict(int)
+    cnt_j = defaultdict(int)
+    t84 = defaultdict(list)
+    j84 = defaultdict(list)
+    for r in recs:
+        ym = r["date"][:7]
+        if r["kind"] == "trade" and not r["cancelled"]:
+            cnt_t[(r["lawd"], ym)] += 1
+            if r["band"] == analyze.BAND_84 and ym in last3:
+                t84[r["lawd"]].append(r["price"])
+        elif r["kind"] == "rent" and r["rent_type"] == "전세":
+            cnt_j[(r["lawd"], ym)] += 1
+            if r["band"] == analyze.BAND_84 and ym in last3 and r.get("deposit"):
+                j84[r["lawd"]].append(r["deposit"])
+    head = "".join(f"<th>{int(l[5:])}월</th>" for l in labels)
+    vrows = ""
+    for g in GU_ORDER:
+        tc = "".join(f'<td class="num">{cnt_t[(g, l)]:,}</td>' for l in labels)
+        jc = "".join(f'<td class="num">{cnt_j[(g, l)]:,}</td>' for l in labels)
+        vrows += (f'<tr><td rowspan="2"><b>{GU_SHORT[g]}</b></td><td>매매</td>{tc}</tr>'
+                  f'<tr><td>전세</td>{jc}</tr>')
+    volume = (f'<div class="scroll"><table class="vol"><tr><th>구</th><th></th>{head}</tr>{vrows}</table></div>')
+    grows = ""
+    for g in GU_ORDER:
+        tm, jm = analyze.median_won(t84[g]), analyze.median_won(j84[g])
+        ratio = f"{jm / tm * 100:.0f}%" if tm and jm else "–"
+        grows += (f'<tr><td><b>{GU_SHORT[g]}</b></td>'
+                  f'<td class="num">{money2(tm)}<br><small>{len(t84[g])}건</small></td>'
+                  f'<td class="num">{money2(jm)}<br><small>{len(j84[g])}건</small></td>'
+                  f'<td class="num"><b>{ratio}</b></td></tr>')
+    gap = ('<div class="scroll"><table><tr><th>구</th><th>매매 중간값</th><th>전세 중간값</th><th>전세가율</th></tr>'
+           + grows + "</table></div>")
+    return volume, gap, labels
+
+
+def main():
+    ctx = analyze.build_context()
+    recs = collect.load_all()
+    for r in recs:
+        r["band"] = analyze.band(r.get("area"))
+    today = ctx["now"].date()
+    start = sys.argv[1] if len(sys.argv) > 2 else (today - timedelta(days=7)).isoformat()
+    end = sys.argv[2] if len(sys.argv) > 2 else today.isoformat()
+    week, week_n = week_table(recs, start, end)
+    movein, mc = movein_table(ctx)
+    volume, gap, labels = gu_stats(recs, ctx["now"])
+    out = {
+        "asof": ctx["meta"].get("last_run", "")[:10],
+        "core": core_table(ctx),
+        "week": week, "week_n": week_n, "week_range": [start, end],
+        "movein": movein,
+        "movein_latest84": format_won(mc["latest84"]["price"]) if mc["latest84"] else None,
+        "movein_med3": format_won(mc["med3"]) if mc["med3"] else None,
+        "movein_n3": mc["n3"], "movein_kind": mc["kind_ko"],
+        "volume": volume, "gap": gap, "months": labels,
+    }
+    json.dump(out, sys.stdout, ensure_ascii=False, indent=1)
+
+
+if __name__ == "__main__":
+    main()
