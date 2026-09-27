@@ -139,10 +139,16 @@ def fetch_all(kind, lawd_cd, deal_ymd, service_key, rows=1000, log=print):
     return out
 
 
+def fingerprint(key):
+    """키를 드러내지 않고 비교하기 위한 지문(길이 + SHA-256 앞 8자리)."""
+    import hashlib
+    return f"길이 {len(key)}, 지문 {hashlib.sha256(key.encode()).hexdigest()[:8]}"
+
+
 def resolve_key(log=print):
     """Encoding/Decoding 키 중 실제 동작하는 쪽을 찾아 반환."""
     raw = get_raw_key()
-    errors = []
+    errors = [f"키 {fingerprint(raw)}"]
     for label, k in key_candidates(raw):
         try:
             call("trade", "26350", _recent_ym(), k, rows=1)
