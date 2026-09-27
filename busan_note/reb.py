@@ -26,14 +26,14 @@ def mask(text):
     return api.mask(re.sub(r"(KEY=)[^&\s]+", r"\1***", str(text)))
 
 
-def call(service, key, page_size=1000, max_pages=200, **params):
+def call(service, key, page_size=1000, max_pages=200, timeout=20, retries=(3, 10), **params):
     """모든 페이지를 받아 row 목록을 돌려준다."""
     rows, page = [], 1
     while page <= max_pages:
         q = dict(params, KEY=key, Type="json", pIndex=page, pSize=page_size)
-        for wait in (3, 10, None):
+        for wait in (*retries, None):
             try:
-                r = requests.get(BASE + service, params=q, timeout=30)
+                r = requests.get(BASE + service, params=q, timeout=timeout)
                 break
             except requests.RequestException as e:
                 if wait is None:
@@ -76,7 +76,15 @@ def collect_weekly(log=print):
     """부산 전체·권역·구군 주간 매매/전세 지수를 받아 data/reb/weekly.json 에 저장. 실패 목록 반환."""
     import json
     key = get_key()
-    regions = busan_regions(key)
+    # 첫 호출로 접속 가능 여부를 빨리 확인한다(해외 서버에서 막히는 경우 대비).
+    t0 = time.time()
+    try:
+        itm = call("SttsApiTblItm.do", key, timeout=15, retries=(5,), STATBL_ID=TABLES["sale"])
+    except RebError as e:
+        raise RebError(f"부동산원 접속 실패({time.time() - t0:.0f}초): " + mask(e))
+    log(f"부동산원 접속 확인 ({time.time() - t0:.1f}초)")
+    regions = [(r["ITM_ID"], r["ITM_FULLNM"]) for r in itm
+               if r["ITM_TAG"] == "분류" and r["ITM_FULLNM"].split(">")[0] == BUSAN_ROOT]
     out, failures = {}, []
     for cid, full in regions:
         name = full.split(">")[-1]
