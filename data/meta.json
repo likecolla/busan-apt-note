@@ -1,5 +1,5 @@
 {
- "last_run": "2026-09-27T18:02",
+ "last_run": "2026-09-27T18:24",
  "baseline_kinds": [],
  "new_count": 0,
  "months": [
@@ -7,5 +7,36 @@
   "202608",
   "202609"
  ],
- "failures": []
+ "failures": [
+  {
+   "kind": "부동산원 매매지수",
+   "gu": "부산진구",
+   "ym": "",
+   "error": "네트워크 오류: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+  },
+  {
+   "kind": "부동산원 전세지수",
+   "gu": "수영구",
+   "ym": "",
+   "error": "네트워크 오류: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+  },
+  {
+   "kind": "부동산원 전세지수",
+   "gu": "해운대구",
+   "ym": "",
+   "error": "네트워크 오류: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+  },
+  {
+   "kind": "부동산원 전세지수",
+   "gu": "기장군",
+   "ym": "",
+   "error": "네트워크 오류: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+  },
+  {
+   "kind": "부동산원 전세지수",
+   "gu": "북구",
+   "ym": "",
+   "error": "네트워크 오류: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+  }
+ ]
 }
