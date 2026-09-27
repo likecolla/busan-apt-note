@@ -283,6 +283,55 @@ def temperature_section(ctx):
 <p class="sub">지수는 표본 아파트의 시세 변화를 모은 값이라 개별 단지 실거래와 다를 수 있습니다. 주간 −0.02%는 10억 원 아파트로 치면 한 주에 20만 원 수준이라, 한 주보다 몇 주째 같은 방향인지를 보세요.</p>'''
 
 
+def sint(v, unit="명"):
+    if v is None:
+        return "–"
+    cls = "up" if v > 0 else ("down" if v < 0 else "")
+    return f'<b class="{cls}">{v:+,}{unit}</b>' if v else f"0{unit}"
+
+
+def supply_section(ctx):
+    k = ctx.get("kosis")
+    if not k:
+        return '<p class="sub">KOSIS 통계를 아직 받지 못했습니다.</p>'
+    ym = lambda v: f"{v[:4]}. {int(v[4:])}."
+    b = k["busan"]
+
+    def chg(a, c):
+        return f'{(a / c - 1) * 100:+.0f}%' if a and c else "–"
+    rows = ""
+    for r in [b] + k["gus"]:
+        if r["gu"] != "부산" and not r["now"]:
+            continue
+        mine = r["gu"] in WATCH_GU or r["gu"] == "부산"
+        nm = f'<b>{e(r["gu"])}</b>' if mine else e(r["gu"])
+        rows += (f'<tr><td>{nm}</td><td class="num">{r["now"] or 0:,}호</td><td class="num">{chg(r["now"], r["prev"])}</td>'
+                 f'<td class="num">{chg(r["now"], r["yago"])}</td><td class="num">{(r["done"] or 0):,}호</td></tr>')
+    mrows = "".join(
+        f'<tr><td>{"<b>" if (m["gu"] in WATCH_GU or m["gu"] == "부산") else ""}{e(m["gu"])}{"</b>" if (m["gu"] in WATCH_GU or m["gu"] == "부산") else ""}</td>'
+        f'<td class="num">{sint(m["net_last"])}</td>'
+        f'<td class="num">{sint(m["net_3m"])}</td>'
+        f'<td class="num">{sint(m["net_12m"])}</td></tr>'
+        for m in k["migration"])
+
+    def s12(a, c):
+        return f'{a:,}호 <span class="sub">(직전 12개월 {c:,}호, {chg(a, c)})</span>' if a and c else "–"
+    return f'''
+<p class="sub">통계청 KOSIS(국토교통부 미분양·주택건설 실적, 통계청 인구이동). 미분양은 {ym(k["last"])} 기준, 인구이동은 {ym(k["mig_last"])} 기준입니다.</p>
+<div class="stats">
+  <div class="stat"><div class="label">부산 미분양</div><div class="big">{b["now"]:,}호</div>
+    <div class="sub">전월 대비 {chg(b["now"], b["prev"])} · 1년 전 대비 {chg(b["now"], b["yago"])} · 준공 후 미분양 {b["done"]:,}호</div></div>
+  <div class="stat"><div class="label">부산 착공 (최근 12개월, {ym(k["supply_last"])}까지)</div><div>{s12(k["starts_12m"], k["starts_prev12m"])}</div></div>
+  <div class="stat"><div class="label">부산 준공 (최근 12개월)</div><div>{s12(k["completions_12m"], k["completions_prev12m"])}</div></div>
+</div>
+<div class="chart-box small" style="margin-top:12px"><canvas id="unsoldchart" role="img" aria-label="부산 미분양과 준공 후 미분양 월별 추이"></canvas></div>
+<h4>구별 미분양 <span class="sub">(미분양이 있는 구만)</span></h4>
+<div class="scroll"><table><thead><tr><th>구</th><th>미분양</th><th>전월 대비</th><th>1년 전 대비</th><th>준공 후 미분양</th></tr></thead><tbody>{rows}</tbody></table></div>
+<h4>인구 순이동 <span class="sub">(전입 − 전출)</span></h4>
+<div class="scroll"><table><thead><tr><th>구</th><th>최근 월</th><th>최근 3개월</th><th>최근 12개월</th></tr></thead><tbody>{mrows}</tbody></table></div>
+<p class="sub">착공은 2~3년 뒤 입주 물량의 선행 지표입니다. 착공이 줄면 몇 년 뒤 신축 공급이 줄어 전세·신축 가격을 받치는 쪽으로, 미분양(특히 준공 후 미분양)이 늘면 누르는 쪽으로 작용하는 경우가 많습니다. 인구 순이동은 주소 이전 기준이라 실제 수요와 다를 수 있습니다.</p>'''
+
+
 STATUS_CLASS = {"적중": "hit", "빗나감": "miss", "표본 부족": "", "진행 중": "wait", "신고 기다림": "wait", "대기": ""}
 
 
@@ -492,7 +541,18 @@ JS = r"""
           return c.dataset.label+': '+(c.raw==null?'-':c.raw.toFixed(2)); }}}},
         scales:axes(function(v){return v.toFixed(0);})}});
   }
-  function drawAll(){ drawTrend(); drawCompares(); drawVolume(); drawReb(); }
+  function drawUnsold(){
+    var el=document.getElementById('unsoldchart'); if(!el||!data.unsold) return;
+    if(charts.uns) charts.uns.destroy();
+    var u=data.unsold, cnt=u.m.map(function(){return null;});
+    charts.uns=new Chart(el,{type:'line',data:{labels:u.m.map(function(m){return m.slice(2,4)+'.'+m.slice(4);}),
+      datasets:[line('부산 미분양', u.u, cnt, css('--s2')), line('준공 후 미분양', u.d, cnt, css('--s1'))]},
+      options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+        elements:{point:{radius:0}}, plugins:{legend:legend(), tooltip:{callbacks:{label:function(c){
+          return c.dataset.label+': '+(c.raw==null?'-':c.raw.toLocaleString('ko-KR')+'호'); }}}},
+        scales:axes(function(v){return v.toLocaleString('ko-KR');})}});
+  }
+  function drawAll(){ drawTrend(); drawCompares(); drawVolume(); drawReb(); drawUnsold(); }
   drawAll();
   if(window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawAll);
 })();
@@ -527,7 +587,9 @@ def build():
     base = [t for m, t in zip(v["months"], v["total"]) if m not in v["incomplete"]]
     reb_busan = next((r for r in (ctx.get("reb") or []) if r["level"] == 1), None)
     reb_series = ([{"d": d, "s": sv, "j": jv} for _, d, sv, jv in reb_busan["series"][-156:]] if reb_busan else [])
-    payload = dict(ctx["chart"], compares=compares, reb=reb_series,
+    ks = ctx.get("kosis")
+    unsold_series = ({"m": ks["series"]["months"], "u": ks["series"]["unsold"], "d": ks["series"]["done"]} if ks else None)
+    payload = dict(ctx["chart"], compares=compares, reb=reb_series, unsold=unsold_series,
                    volume={"months": v["months"], "total": v["total"], "incomplete": v["incomplete"],
                            "avg": sum(base) / len(base) if base else 0})
     chart_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
@@ -580,6 +642,9 @@ def build():
 
 <h2>구별 온도 <span class="sub">한국부동산원 주간 지수</span></h2>
 {temperature_section(ctx)}
+
+<h2>공급과 수요 <span class="sub">KOSIS</span></h2>
+{supply_section(ctx)}
 
 <h2>거래량 온도</h2>
 {volume_section(ctx)}

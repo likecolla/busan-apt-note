@@ -28,6 +28,21 @@ def collect_reb():
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def collect_kosis():
+    """KOSIS 미분양·공급·인구이동. 키가 없거나 실패해도 전체를 멈추지 않는다."""
+    import json
+    from busan_note import kosis
+    meta_path = collect.DATA / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    try:
+        fails = kosis.collect(log=logging.info)
+    except kosis.KosisError as e:
+        fails = [{"kind": "KOSIS", "gu": "전체", "ym": "", "error": kosis.mask(e)[:160]}]
+        logging.warning("KOSIS 건너뜀: %s", kosis.mask(e))
+    meta["failures"] = meta.get("failures", []) + fails
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-fetch", action="store_true")
@@ -46,6 +61,7 @@ def main():
             return 1
         logging.info("수집 끝 — 새 거래 %d건, 실패 %d건", meta["new_count"], len(meta["failures"]))
         collect_reb()
+        collect_kosis()
     try:
         from busan_note import render
     except ImportError:

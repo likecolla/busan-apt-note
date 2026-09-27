@@ -23,9 +23,18 @@
   ```
   PC에서 갱신한 결과를 GitHub 페이지에 반영하려면 `git pull` 후 실행하고 `git push`까지 해야 합니다. 보통은 GitHub에서 실행하는 쪽이 편합니다.
 
+### 쓰는 API 키 (모두 `.env`와 GitHub Secret에 같은 이름으로)
+| 이름 | 발급처 | 쓰는 곳 |
+|---|---|---|
+| `DATA_GO_KR_KEY` | 공공데이터포털 | 매매·분양권·전월세 실거래 (필수) |
+| `REB_KEY` | 한국부동산원 R-ONE | 구별 온도(주간 매매·전세 지수) |
+| `KOSIS_KEY` | 통계청 KOSIS | 미분양, 착공·준공, 인구 이동 |
+
+`REB_KEY`나 `KOSIS_KEY`가 없거나 접속이 실패해도 실거래 수집은 계속되고, 해당 섹션만 이전 자료로 남습니다.
+
 ### API 키 바꾸기
 1. 공공데이터포털에서 새 키를 받습니다. **Decoding(일반) 인증키**를 권장합니다.
-2. **GitHub:** 저장소 → Settings → Secrets and variables → Actions → `DATA_GO_KR_KEY` → Update secret에 붙여 넣습니다.
+2. **GitHub:** 저장소 → Settings → Secrets and variables → Actions → 해당 이름(`DATA_GO_KR_KEY` 등) → Update secret에 붙여 넣습니다.
 3. **내 PC:** 프로젝트 폴더의 `.env` 파일에서 `DATA_GO_KR_KEY=` 뒤의 값을 바꿉니다. 숨김 파일이라 Finder에서는 `Cmd+Shift+.`을 눌러야 보입니다.
 4. 키는 코드, 채팅, 이슈 어디에도 붙여 넣지 마세요.
 

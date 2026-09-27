@@ -33,6 +33,7 @@ jobs:
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           REB_KEY: ${{ secrets.REB_KEY }}
+          KOSIS_KEY: ${{ secrets.KOSIS_KEY }}
         run: python run.py
 
       - name: 데이터 저장(커밋)

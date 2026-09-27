@@ -202,6 +202,14 @@ def _reb_summary():
         return None
 
 
+def _kosis_summary():
+    try:
+        from . import kosis
+        return kosis.summary()
+    except Exception:   # KOSIS 자료가 없어도 페이지는 만든다
+        return None
+
+
 def build_context():
     recs = collect.load_all()
     cfg = load_config()
@@ -310,7 +318,7 @@ def build_context():
     return {
         "now": now, "meta": meta, "cards": cards,
         "chart": {"months": all_months, "series": series},
-        "compares": compares, "predictions": predictions, "reb": _reb_summary(),
+        "compares": compares, "predictions": predictions, "reb": _reb_summary(), "kosis": _kosis_summary(),
         "volume": {"rows": volume, "months": all_months, "total": total_series,
                    "incomplete": sorted(incomplete), "recent3": recent3,
                    "span": (complete[0], complete[-1]) if complete else ("", "")},
