@@ -74,6 +74,10 @@ b.up{color:var(--up)} b.down{color:var(--s1)}
 .routine ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.9rem}
 .routine a{color:var(--accent);font-weight:600}
 .routine p{margin:8px 0 0}
+.howto{margin-top:8px}
+.howto h4{margin:12px 0 4px;font-size:.9rem;color:var(--accent)}
+.howto p,.howto ul{margin:0 0 4px;font-size:.88rem}
+.howto ul{padding-left:18px}
 html{scroll-padding-top:12px}
 .div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .drow{display:grid;grid-template-columns:64px 1fr 1fr 52px;align-items:center;margin:4px 0;font-size:.85rem}
@@ -108,7 +112,31 @@ ul.plain{margin:4px 0;padding-left:18px;font-size:.85rem}
   <div class="summary">새로 신고된 거래 <b>0건</b></div>
 </header>
 <nav class="routine" aria-label="월·목 5분 루틴"><h2>월·목 5분 루틴</h2><ol><li><a href="#temp">구별 온도</a><span class="sub"> — 부산 매매 -0.01%(6주 연속 하락), 관심 6개 구 중 4곳 상승</span></li><li><a href="#new">새로 신고된 거래</a><span class="sub"> — 0건, 그중 핵심 6곳 0건</span></li><li><a href="#core">핵심 6곳 카드</a><span class="sub"> — 3개월 중간값과 1년 전 대비를 보고, &quot;표본 적음&quot; 2곳은 한두 건으로 판단하지 않기</span></li><li><a href="#pred">예측 기록장</a><span class="sub"> — 진행 중 0개 · 채점 0개(적중 0) · 다음 채점 2026-11</span></li><li><a href="#supply">공급과 수요 · 분양·청약</a><span class="sub"> — 월 1회: 미분양, 착공, 인구 이동, 새 분양 경쟁률</span></li></ol>
-<p class="sub">위에서부터 차례로 봅니다. 숫자 하나로 결론을 내리지 말고, 몇 주째 같은 방향인지와 표본 수를 함께 보세요.</p></nav>
+<p class="sub">위에서부터 차례로 봅니다. 숫자 하나로 결론을 내리지 말고, 몇 주째 같은 방향인지와 표본 수를 함께 보세요.</p>
+<details class="howto"><summary>읽는 법 자세히</summary>
+<h4>① 구별 온도 — 시장 전체의 방향</h4>
+<p>한 주의 숫자보다 <b>같은 방향이 몇 주 이어졌는지</b>를 봅니다. 4주 이상이면 흐름으로 읽습니다. 주간 −0.01%는 10억 원 아파트로 한 주에 10만 원 수준이라 크기보다 방향이 중요합니다.</p>
+<h4>② 새로 신고된 거래 — 이번 주에 생긴 일</h4>
+<p>신고가와 해제 거래를 확인합니다. 신고는 계약 후 30일 안에 하므로 여기 나온 거래는 지난달 계약일 수 있어, 계약일을 함께 봅니다.</p>
+<h4>③ 핵심 6곳 카드 — 내 관심 단지의 위치</h4>
+<ul>
+<li><b>최근 거래</b>는 한 건이라 층·조망에 따라 크게 흔들립니다.</li>
+<li><b>3개월 중간값</b>이 지금 시세에 가장 가깝습니다. "표본 적음"(5건 미만)이면 근거로 쓰지 않습니다.</li>
+<li><b>3.3㎡당 · 1년 전 대비</b>가 추세를 볼 때 가장 믿을 만합니다. 75㎡대와 84㎡대가 섞인 단지는 이 값을 우선합니다.</li>
+<li><b>최고가 대비</b>는 최고가 한 건과 중간값을 비교해 원래 크게 나옵니다. "지금 가격대가 어디쯤인가"를 볼 때만 씁니다.</li>
+<li><b>전세가율</b>이 높을수록 매매와 전세의 차이(갭)가 작습니다. 신규 계약 기준입니다.</li>
+<li><b>더 보기</b>에서 해제가 많거나 최고가가 해제됐다면 그 신고가는 의심합니다.</li>
+</ul>
+<h4>④ 예측 기록장 — 내 판단 점검</h4>
+<p>빗나갔을 때 왜 빗나갔는지 한 줄 적어 두는 것이 목적입니다.</p>
+<h4>⑤ 월 1회 — 분양·청약, 공급과 수요, 거래량</h4>
+<p>누르는 힘(미분양 증가, 청약 미달, 금리)과 받치는 힘(착공 감소, 인구 유입, 전세 상승)을 나눠 적어 봅니다.</p>
+<h4>종합해서 읽기</h4>
+<p>여러 신호가 <b>같은 방향</b>인지 맞춰 봅니다. 지수·인구·청약이 모두 같은 쪽이면 신호가 강하고, 엇갈리면 결론을 서두르지 않습니다.</p>
+<h4>하지 말 것</h4>
+<ul><li>거래 한 건으로 시세 판단하기</li><li>"표본 적음" 숫자를 근거로 쓰기</li>
+<li>기준이 다른 숫자끼리 비교하기(해당지역/합산 경쟁률, 전용/공급 평당가, 신규/갱신 전세)</li></ul>
+</details></nav>
 
 <h2 id="core">핵심 6곳</h2>
 <div class="guide">
@@ -384,7 +412,7 @@ ul.plain{margin:4px 0;padding-left:18px;font-size:.85rem}
 <p class="sub">질문에 미리 답(기준값)을 적어 두고, 기간이 끝나고 신고 기한 2개월이 지나면 실거래로 자동 채점합니다.
 예측은 config/predictions.json에서 더하거나 고칩니다. 맞히는 것보다 왜 빗나갔는지 돌아보는 것이 목적입니다.</p>
 <div class="scroll"><table><thead><tr><th>질문</th><th>기간</th><th>기준</th><th>실거래</th><th>상태</th></tr></thead>
-<tbody><tr><td class="wrap"><b>동래래미안아이파크 84㎡형이 10~12월에 11억 원대를 회복할까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1,100,000,000원 (11억) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>써밋 리미티드 남천 84㎡형 분양권이 10~12월에도 16억 원 이상(웃돈 약 8,000만 유지)일까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1,600,000,000원 (16억) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10~12월 3.3㎡당 가격에서 레이카운티가 동래래미안아이파크보다 비쌀까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">+0.0% 초과</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>대연 디아이엘 84㎡형 분양권이 입주 6개월 전(10~12월)에 최근 3개월 중간값 8억 8,275만 이상을 지킬까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">882,750,000원 (8억 8,275만) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>드파인 광안의 첫 전세 실거래가 연말(10~12월 계약)까지 신고될까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1건 이상</td><td class="num">0건<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10월 한 달 부산 매매지수가 −0.05% 이하로 내릴까? (하락 폭이 유지되거나 커질까)</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-11</span></td><td>26-10~26-10</td><td class="num">-0.05% 이하</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10월 한 달 남구 매매지수가 오를까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-11</span></td><td>26-10~26-10</td><td class="num">+0.00% 초과</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10월 한 달 해운대 전세지수가 0.6% 이상 오를까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-11</span></td><td>26-10~26-10</td><td class="num">+0.60% 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>동래래미안아이파크 10월 매매 3.3㎡당 중간값이 4,000만원 이상일까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-12</span></td><td>26-10~26-10</td><td class="num">3.3㎡당 4,000만원 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>레이카운티 10월 매매가 20건 이상 신고될까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-12</span></td><td>26-10~26-10</td><td class="num">20건 이상</td><td class="num">0건<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr></tbody></table></div>
+<tbody><tr><td class="wrap"><b>동래래미안아이파크 84㎡형이 10~12월에 11억 원대를 회복할까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1,100,000,000원 (11억) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>써밋 리미티드 남천 84㎡형 분양권이 10~12월에도 16억 원 이상(웃돈 약 8,000만 유지)일까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1,600,000,000원 (16억) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10~12월 3.3㎡당 가격에서 레이카운티가 동래래미안아이파크보다 비쌀까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">0% 초과</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>대연 디아이엘 84㎡형 분양권이 입주 6개월 전(10~12월)에 최근 3개월 중간값 8억 8,275만 이상을 지킬까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">882,750,000원 (8억 8,275만) 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>드파인 광안의 첫 전세 실거래가 연말(10~12월 계약)까지 신고될까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2027-03</span></td><td>26-10~26-12</td><td class="num">1건 이상</td><td class="num">0건<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10월 한 달 부산 매매지수가 −0.05% 이하로 내릴까? (하락 폭이 유지되거나 커질까)</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-11</span></td><td>26-10~26-10</td><td class="num">-0.05% 이하</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10월 한 달 남구 매매지수가 오를까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-11</span></td><td>26-10~26-10</td><td class="num">0% 초과</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>10월 한 달 해운대 전세지수가 0.6% 이상 오를까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-11</span></td><td>26-10~26-10</td><td class="num">+0.60% 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>동래래미안아이파크 10월 매매 3.3㎡당 중간값이 4,000만원 이상일까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-12</span></td><td>26-10~26-10</td><td class="num">3.3㎡당 4,000만원 이상</td><td class="num">–<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr><tr><td class="wrap"><b>레이카운티 10월 매매가 20건 이상 신고될까?</b><br><span class="unit">노트 질문(예시) · 2026-09-27 · 채점 2026-12</span></td><td>26-10~26-10</td><td class="num">20건 이상</td><td class="num">0건<br><span class="unit">지금까지 0건</span></td><td><span class="tag ">대기</span></td></tr></tbody></table></div>
 
 <h2 id="new">이번에 새로 신고된 거래</h2>
 <p class="sub">이번 갱신에서 새로 신고된 거래가 없습니다.</p>
