@@ -140,7 +140,7 @@ def gu_stats(recs, now):
         elif r["kind"] == "rent" and r["rent_type"] == "전세":
             cnt_j[(r["lawd"], ym)] += 1
             if r["band"] == analyze.BAND_84 and ym in last3 and r.get("deposit"):
-                j84[r["lawd"]].append(r["deposit"])
+                j84[r["lawd"]].append(r)
     head = "".join(f"<th>{int(l[5:])}월</th>" for l in labels)
     vrows = ""
     for g in GU_ORDER:
@@ -151,11 +151,12 @@ def gu_stats(recs, now):
     volume = (f'<div class="scroll"><table class="vol"><tr><th>구</th><th></th>{head}</tr>{vrows}</table></div>')
     grows = ""
     for g in GU_ORDER:
-        tm, jm = analyze.median_won(t84[g]), analyze.median_won(j84[g])
+        jv, _ = analyze.jeonse_market(j84[g])
+        tm, jm = analyze.median_won(t84[g]), analyze.median_won(jv)
         ratio = f"{jm / tm * 100:.0f}%" if tm and jm else "–"
         grows += (f'<tr><td><b>{GU_SHORT[g]}</b></td>'
                   f'<td class="num">{money2(tm)}<br><small>{len(t84[g])}건</small></td>'
-                  f'<td class="num">{money2(jm)}<br><small>{len(j84[g])}건</small></td>'
+                  f'<td class="num">{money2(jm)}<br><small>신규 {len(jv)}건</small></td>'
                   f'<td class="num"><b>{ratio}</b></td></tr>')
     gap = ('<div class="scroll"><table><tr><th>구</th><th>매매 중간값</th><th>전세 중간값</th><th>전세가율</th></tr>'
            + grows + "</table></div>")

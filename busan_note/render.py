@@ -102,7 +102,7 @@ def card_html(c):
         jr = (f'<div class="stat"><div class="label">전세가율 (84㎡형, 최근 3개월)</div>'
               f'<div><strong>{j["ratio"] * 100:.0f}%</strong> '
               f'<span class="sub">= 전세 중간값 {e(format_won(j["jeonse"]))} ÷ 매매 중간값 {e(format_won(j["trade"]))}'
-              f' · 전세 {j["n"]}건</span>{few(j["n"])}</div></div>')
+              f' · 전세 {j["n"]}건({"신규 계약" if j.get("basis") == "신규" else "신규·갱신 합산"})</span>{few(j["n"])}</div></div>')
     rows = "".join(deal_row(r) for r in c["recent"]) or \
         '<tr><td colspan="5" class="sub">거래 없음</td></tr>'
 
@@ -117,11 +117,25 @@ def card_html(c):
                  for r in c["peak_cancel"])
     pc_html = (f'<p class="sub">당시 같은 면적대 최고가 이상이었다가 해제된 거래:</p><ul class="plain">{pc}</ul>'
                if pc else '<p class="sub">최고가를 찍었다가 해제된 거래는 없습니다.</p>')
+    if c["kind"] != "trade":
+        dong_html = '<h4>동별 가격</h4><p class="sub">분양권 거래에는 동 정보가 없습니다. 입주 후 등기가 끝난 매매부터 동이 공개됩니다.</p>'
+    elif c["dongs"]:
+        show = c["dongs"] if len(c["dongs"]) <= 6 else c["dongs"][:3] + c["dongs"][-3:]
+        drows = "".join(f'<tr><td>{e(d["dong"])}</td><td class="num">{ppy_txt(d["med"])}</td><td class="num">{d["n"]}건{few(d["n"])}</td></tr>'
+                        for d in show)
+        spread = (f'<p>3.3㎡당 가장 비싼 동이 가장 싼 동보다 {pct_html(c["dong_spread"])} '
+                  f'<span class="sub">(2건 이상 거래된 {len(c["dongs"])}개 동 중 {"위·아래 3개" if len(c["dongs"]) > 6 else "전체"}). '
+                  f'동 차이에는 조망뿐 아니라 역·학교까지 거리, 평형 구성, 단지 안 위치가 함께 섞여 있습니다.</span></p>')
+        dong_html = (f'<h4>동별 3.3㎡당 중간값 <span class="sub">(최근 12개월, 등기 완료 매매)</span></h4>'
+                     f'<div class="scroll"><table><thead><tr><th>동</th><th>3.3㎡당</th><th>건수</th></tr></thead><tbody>{drows}</tbody></table></div>{spread}')
+    else:
+        dong_html = '<h4>동별 가격</h4><p class="sub">동 정보가 있는 거래가 부족합니다.</p>'
     more = f'''
-  <details class="more"><summary>층·해제·직거래 더 보기</summary>
+  <details class="more"><summary>층·동·해제·직거래 더 보기</summary>
     <h4>층 구간별 84㎡형 중간값 <span class="sub">(최근 12개월, 최고 {c["top_floor"]}층 기준 3등분)</span></h4>
     <div class="scroll"><table><thead><tr><th>구간</th><th>중간값</th><th>건수</th></tr></thead><tbody>{frows}</tbody></table></div>
     <p>{prem}</p>
+    {dong_html}
     <h4>해제·직거래 <span class="sub">(최근 12개월 {e(c["kind_ko"])} {c["n12"]}건)</span></h4>
     <p>해제 <b>{c["cancel_n"]}건 ({cr})</b> · 직거래 <b>{c["direct_n"]}건</b></p>
     {pc_html}
@@ -453,6 +467,7 @@ def build():
 <title>부산 대단지 실거래 노트</title>
 <meta name="description" content="부산 관심 단지 6곳의 매매·분양권·전월세 실거래 기록">
 <meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">

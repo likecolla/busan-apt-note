@@ -48,6 +48,14 @@ def floor_band(floor, top):
     return FLOOR_BANDS[2]
 
 
+def jeonse_market(rows):
+    """전세 보증금 목록. 신규 계약이 3건 이상이면 신규만(갱신 계약은 인상률 상한 5%로 시세보다 낮음)."""
+    new = [r["deposit"] for r in rows if r.get("contract_type") == "신규" and r.get("deposit")]
+    if len(new) >= 3:
+        return new, "신규"
+    return [r["deposit"] for r in rows if r.get("deposit")], "전체"
+
+
 def median_won(values):
     """중간값을 만 원 단위로 사사오입."""
     values = [v for v in values if v]
@@ -151,13 +159,23 @@ def complex_stats(c, mine, now_label):
         if r.get("price") and (not before or r["price"] >= max(before)):
             peak_cancel.append(r)
 
+    # 동별 3.3㎡당 (최근 12개월, 매매만: 동 정보는 등기 완료 거래에만 있음)
+    dongs = defaultdict(list)
+    for r in ok:
+        if r.get("dong") and ym(r["date"]) in last12:
+            label = r["apt"].replace(c["names"][0].split("(")[0], "").strip("()") if len(c["names"]) > 1 else ""
+            dongs[(label + " " if label else "") + f'{r["dong"].rstrip("동")}동'].append(r["ppy"])
+    dong_rows = sorted(({"dong": k, "med": median_won(v), "n": len(v)} for k, v in dongs.items() if len(v) >= 2),
+                       key=lambda x: x["med"], reverse=True)
+    dong_spread = pct(dong_rows[0]["med"], dong_rows[-1]["med"]) if len(dong_rows) >= 2 else None
+
     jeonse_ratio = None
     if kind == "trade" and med3:
-        j = [r["deposit"] for r in mine if r["kind"] == "rent" and r["rent_type"] == "전세"
-             and r["band"] == BAND_84 and ym(r["date"]) in last3 and r.get("deposit")]
+        j, basis = jeonse_market([r for r in mine if r["kind"] == "rent" and r["rent_type"] == "전세"
+                                  and r["band"] == BAND_84 and ym(r["date"]) in last3])
         jm = median_won(j)
         if jm:
-            jeonse_ratio = {"ratio": jm / med3, "jeonse": jm, "trade": med3, "n": len(j)}
+            jeonse_ratio = {"ratio": jm / med3, "jeonse": jm, "trade": med3, "n": len(j), "basis": basis}
 
     return {
         "name": c["name"], "gu": c["gu"], "kind": kind, "kind_ko": collect.KIND_KO[kind],
@@ -171,7 +189,7 @@ def complex_stats(c, mine, now_label):
         "cancel_rate": len(cancelled) / len(d12) if d12 else None,
         "peak_cancel": sorted(peak_cancel, key=lambda r: r["date"], reverse=True)[:3],
         "recent": deals[:5], "n6": sum(1 for r in deals if ym(r["date"]) in last6),
-        "jeonse_ratio": jeonse_ratio,
+        "jeonse_ratio": jeonse_ratio, "dongs": dong_rows, "dong_spread": dong_spread,
         "_ok": ok, "_ok84": ok84,
     }
 
