@@ -102,7 +102,11 @@ def parse_response(content):
     return code, msg, total, items
 
 
-def call(kind, lawd_cd, deal_ymd, service_key, page=1, rows=1000, timeout=30):
+class NetworkError(ApiError):
+    """접속 자체가 안 되는 오류(키·응답 오류와 구분)."""
+
+
+def call(kind, lawd_cd, deal_ymd, service_key, page=1, rows=1000, timeout=30, retries=(5, 15)):
     params = {
         "serviceKey": service_key,
         "LAWD_CD": lawd_cd,
@@ -110,13 +114,13 @@ def call(kind, lawd_cd, deal_ymd, service_key, page=1, rows=1000, timeout=30):
         "pageNo": page,
         "numOfRows": rows,
     }
-    for attempt, wait in enumerate((30, 60, 120, None)):
+    for attempt, wait in enumerate((*retries, None)):
         try:
             r = requests.get(ENDPOINTS[kind], params=params, timeout=timeout)
             break
         except requests.RequestException as e:
             if wait is None:
-                raise ApiError(f"네트워크 오류({attempt + 1}회 시도): " + mask(e))
+                raise NetworkError(f"네트워크 오류({attempt + 1}회 시도): " + mask(e))
             time.sleep(wait)
     if r.status_code != 200:
         try:
@@ -155,7 +159,7 @@ def resolve_key(log=print):
     errors = [f"키 {fingerprint(raw)}"]
     for label, k in key_candidates(raw):
         try:
-            call("trade", "26350", _recent_ym(), k, rows=1)
+            call("trade", "26350", _recent_ym(), k, rows=1, retries=(30, 60, 120))
             return label, k
         except ApiError as e:
             errors.append(f"[{label}] {e}")

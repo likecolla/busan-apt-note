@@ -106,6 +106,8 @@ def run_collect(months=None, kinds=KINDS, backfill=False):
     label, key = api.resolve_key()
     log.info("키 확인 OK (%s 키 방식)", label)
     failures, new_count, baseline_kinds, all_yms = [], 0, [], set()
+    net_fail = 0          # 연속 접속 실패 횟수
+    MAX_NET_FAIL = 5
     for kind in kinds:
         baseline = backfill or not has_data(kind)
         if baseline:
@@ -117,9 +119,16 @@ def run_collect(months=None, kinds=KINDS, backfill=False):
             existing = {rec_key(r): r for r in load_month(kind, ym)}
             got_any = False
             for lawd in LAWD:
+                if net_fail >= MAX_NET_FAIL:
+                    failures.append({"kind": KIND_KO[kind], "gu": LAWD[lawd], "ym": ym,
+                                     "error": "연속 접속 실패로 건너뜀"})
+                    continue
                 try:
                     items = api.fetch_all(kind, lawd, ym, key)
+                    net_fail = 0
                 except api.ApiError as e:
+                    if isinstance(e, api.NetworkError):
+                        net_fail += 1
                     msg = " ".join(api.mask(e).split())[:160]
                     log.warning("실패: %s %s %s — %s", KIND_KO[kind], LAWD[lawd], ym, msg)
                     failures.append({"kind": KIND_KO[kind], "gu": LAWD[lawd], "ym": ym, "error": msg})
