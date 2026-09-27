@@ -99,7 +99,7 @@ def has_data(kind):
     return d.exists() and any(d.glob("*.json"))
 
 
-def run_collect(months=None, kinds=KINDS):
+def run_collect(months=None, kinds=KINDS, backfill=False):
     """수집 실행. 자료 종류별로 기존 데이터가 없으면 6개월(기준선), 있으면 3개월.
     기준선 수집분은 '새로 신고된 거래'로 세지 않는다."""
     run_id = datetime.now(KST).strftime("%Y-%m-%dT%H:%M")
@@ -107,7 +107,7 @@ def run_collect(months=None, kinds=KINDS):
     log.info("키 확인 OK (%s 키 방식)", label)
     failures, new_count, baseline_kinds, all_yms = [], 0, [], set()
     for kind in kinds:
-        baseline = not has_data(kind)
+        baseline = backfill or not has_data(kind)
         if baseline:
             baseline_kinds.append(KIND_KO[kind])
         yms = months_back(months or (6 if baseline else 3))
