@@ -39,12 +39,16 @@ def d_short(iso):
 
 
 def area_floor(r):
-    return f'{r["area"]:.1f}㎡({pyeong(r["area"])}) · {e(r["floor"])}층'
+    return f'{r["area"]:.1f}㎡ ({pyeong(r["area"])}) · {e(r["floor"])}층'
 
 
 def pyeong(area):
-    """전용면적 ㎡ → '전용 25.7평' (1평 = 3.3058㎡)"""
-    return f"전용 {area / 3.3058:.1f}평"
+    """전용면적 ㎡ → 흔히 부르는 평형(공급면적 기준). 59·84㎡는 관례값, 나머지는 전용률 약 75%로 어림."""
+    if 57 <= area < 61:
+        return "25평형"
+    if 83 <= area < 86:
+        return "34평형"
+    return f"약 {round(area * 1.33 / 3.3058)}평형"
 
 
 def pct(v):
