@@ -115,6 +115,8 @@ def fmt_value(metric, v):
     from .money import format_won
     if v is None:
         return "–"
+    if v == 0 and metric in ("gap_ppy", "reb_sale", "reb_jeonse"):
+        return "0%"
     if metric in ("med84",):
         return format_won(v)
     if metric == "ppy":
