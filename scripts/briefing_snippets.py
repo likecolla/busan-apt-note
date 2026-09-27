@@ -73,7 +73,7 @@ def core_table(ctx):
                     f'<td class="num">{latest}</td><td class="num">{med}</td>'
                     f'<td class="num">{ppy}</td><td class="num">{peak}</td></tr>')
     return ('<div class="scroll"><table>'
-            '<tr><th>단지</th><th>84㎡형 최근 거래</th><th>최근 3개월 중간값</th><th>3.3㎡당 (모든 면적)</th><th>84㎡형 최고가(5년)</th></tr>'
+            '<tr><th>단지</th><th>84㎡형 최근 거래</th><th>최근 3개월 중간값</th><th>3.3㎡당 가격 (전체 면적)</th><th>84㎡형 최고가 (최근 5년)</th></tr>'
             + "".join(rows) + "</table></div>")
 
 
