@@ -194,6 +194,14 @@ def complex_stats(c, mine, now_label):
     }
 
 
+def _reb_summary():
+    try:
+        from . import reb
+        return reb.weekly_summary()
+    except Exception:   # 부동산원 자료가 없어도 페이지는 만든다
+        return None
+
+
 def build_context():
     recs = collect.load_all()
     cfg = load_config()
@@ -302,7 +310,7 @@ def build_context():
     return {
         "now": now, "meta": meta, "cards": cards,
         "chart": {"months": all_months, "series": series},
-        "compares": compares, "predictions": predictions,
+        "compares": compares, "predictions": predictions, "reb": _reb_summary(),
         "volume": {"rows": volume, "months": all_months, "total": total_series,
                    "incomplete": sorted(incomplete), "recent3": recent3,
                    "span": (complete[0], complete[-1]) if complete else ("", "")},

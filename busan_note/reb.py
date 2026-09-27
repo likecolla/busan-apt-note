@@ -1,0 +1,152 @@
+"""한국부동산원 R-ONE Open API (부동산통계). 인증키는 환경변수 REB_KEY 에서만 읽는다."""
+import os
+import re
+import time
+
+from . import api  # api 를 먼저 불러 urllib3 경고 필터를 적용
+import requests
+
+BASE = "https://www.reb.or.kr/r-one/openapi/"
+
+
+class RebError(Exception):
+    pass
+
+
+def get_key():
+    api.load_dotenv()
+    k = os.environ.get("REB_KEY", "").strip()
+    if not k:
+        raise RebError(".env 또는 환경변수에 REB_KEY 가 비어 있습니다.")
+    api._SECRETS.add(k)
+    return k
+
+
+def mask(text):
+    return api.mask(re.sub(r"(KEY=)[^&\s]+", r"\1***", str(text)))
+
+
+def call(service, key, page_size=1000, max_pages=200, **params):
+    """모든 페이지를 받아 row 목록을 돌려준다."""
+    rows, page = [], 1
+    while page <= max_pages:
+        q = dict(params, KEY=key, Type="json", pIndex=page, pSize=page_size)
+        for wait in (3, 10, None):
+            try:
+                r = requests.get(BASE + service, params=q, timeout=30)
+                break
+            except requests.RequestException as e:
+                if wait is None:
+                    raise RebError("네트워크 오류: " + mask(e))
+                time.sleep(wait)
+        try:
+            data = r.json()
+        except ValueError:
+            raise RebError(f"HTTP {r.status_code}: " + mask(r.text[:200]))
+        name = service.replace(".do", "")
+        if name not in data:
+            res = data.get("RESULT", {})
+            if res.get("CODE") == "INFO-200":   # 데이터 없음
+                return rows
+            raise RebError(f'{res.get("CODE")} {res.get("MESSAGE")}')
+        head, body = data[name][0]["head"], data[name][1]["row"]
+        total = head[0]["list_total_count"]
+        rows.extend(body)
+        if len(rows) >= total or not body:
+            break
+        page += 1
+        time.sleep(0.3)
+    return rows
+
+
+# ---- 부산 주간 아파트 가격지수 ----
+TABLES = {"sale": "T244183132827305", "jeonse": "T247713133046872"}   # (주) 매매·전세가격지수
+BUSAN_ROOT = "부산"
+START_WEEK = "202101"
+OUT = api.ROOT / "data" / "reb" / "weekly.json"
+
+
+def busan_regions(key):
+    itm = call("SttsApiTblItm.do", key, STATBL_ID=TABLES["sale"])
+    return [(r["ITM_ID"], r["ITM_FULLNM"]) for r in itm
+            if r["ITM_TAG"] == "분류" and r["ITM_FULLNM"].split(">")[0] == BUSAN_ROOT]
+
+
+def collect_weekly(log=print):
+    """부산 전체·권역·구군 주간 매매/전세 지수를 받아 data/reb/weekly.json 에 저장. 실패 목록 반환."""
+    import json
+    key = get_key()
+    regions = busan_regions(key)
+    out, failures = {}, []
+    for cid, full in regions:
+        name = full.split(">")[-1]
+        series = {}
+        for kind, tbl in TABLES.items():
+            try:
+                rows = call("SttsApiTblData.do", key, STATBL_ID=tbl, DTACYCLE_CD="WK",
+                            CLS_ID=cid, START_WRTTIME=START_WEEK)
+            except RebError as e:
+                msg = mask(e)[:160]
+                failures.append({"kind": f"부동산원 {'매매' if kind == 'sale' else '전세'}지수", "gu": name, "ym": "", "error": msg})
+                log(f"실패: 부동산원 {kind} {name} — {msg}")
+                continue
+            for r in rows:
+                w = series.setdefault(r["WRTTIME_IDTFR_ID"], {"date": r["WRTTIME_DESC"]})
+                w[kind] = r["DTA_VAL"]
+            time.sleep(0.3)
+        out[name] = {"full": full, "weeks": dict(sorted(series.items()))}
+    if out:
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log(f"부동산원 주간 지수: {len(out)}개 지역 저장, 실패 {len(failures)}건")
+    return failures
+
+
+def _chg(a, b):
+    return (a / b - 1) * 100 if a and b else None
+
+
+def weekly_summary():
+    """지역별 주간 변동률(%)·연속 주수·올해 누계·4주 변동. 파일이 없으면 None."""
+    import json
+    if not OUT.exists():
+        return None
+    data = json.loads(OUT.read_text(encoding="utf-8"))
+    rows = []
+    for name, d in data.items():
+        weeks = [(k, v) for k, v in d["weeks"].items() if v.get("sale")]
+        if len(weeks) < 6:
+            continue
+        ks = [k for k, _ in weeks]
+        last_k, last = weeks[-1]
+        prev = weeks[-2][1]
+        base_k = max((k for k in ks if k < last_k[:4] + "01"), default=None)
+        base = d["weeks"].get(base_k, {}) if base_k else {}
+
+        def rounded(x):
+            return round(x, 2) if x is not None else None
+
+        sale_chg = [rounded(_chg(weeks[i][1]["sale"], weeks[i - 1][1]["sale"])) for i in range(1, len(weeks))]
+        jeon_chg = [rounded(_chg(weeks[i][1].get("jeonse"), weeks[i - 1][1].get("jeonse"))) for i in range(1, len(weeks))]
+
+        def streak(ch):
+            sign = lambda v: (v > 0) - (v < 0)
+            s0, n = sign(ch[-1]), 0
+            for v in reversed(ch):
+                if v is None or sign(v) != s0:
+                    break
+                n += 1
+            return {1: "상승", -1: "하락", 0: "보합"}[s0], n
+
+        depth = len(d["full"].split(">"))
+        rows.append({
+            "name": name, "full": d["full"], "level": depth,
+            "week": last_k, "date": last["date"],
+            "sale_wk": sale_chg[-1], "jeonse_wk": jeon_chg[-1],
+            "sale_streak": streak(sale_chg), "jeonse_streak": streak(jeon_chg),
+            "sale_4w": rounded(_chg(last["sale"], weeks[-5][1]["sale"])),
+            "sale_ytd": rounded(_chg(last["sale"], base.get("sale"))),
+            "jeonse_ytd": rounded(_chg(last.get("jeonse"), base.get("jeonse"))),
+            "series": [(k, v["date"], v["sale"], v.get("jeonse")) for k, v in weeks],
+        })
+    return rows

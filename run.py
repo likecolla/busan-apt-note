@@ -13,6 +13,21 @@ import sys
 from busan_note import api, collect
 
 
+def collect_reb():
+    """부동산원 주간 지수. 키가 없거나 실패해도 전체를 멈추지 않는다."""
+    import json
+    from busan_note import reb
+    meta_path = collect.DATA / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    try:
+        fails = reb.collect_weekly(log=logging.info)
+    except reb.RebError as e:
+        fails = [{"kind": "부동산원 주간 지수", "gu": "전체", "ym": "", "error": reb.mask(e)[:160]}]
+        logging.warning("부동산원 주간 지수 건너뜀: %s", reb.mask(e))
+    meta["failures"] = meta.get("failures", []) + fails
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-fetch", action="store_true")
@@ -30,6 +45,7 @@ def main():
             logging.error("수집 중단: %s", api.mask(e))
             return 1
         logging.info("수집 끝 — 새 거래 %d건, 실패 %d건", meta["new_count"], len(meta["failures"]))
+        collect_reb()
     try:
         from busan_note import render
     except ImportError:

@@ -235,6 +235,54 @@ def compare_section(ctx, color_of):
     return "".join(out)
 
 
+WATCH_GU = {"해운대구", "수영구", "남구", "부산진구", "동래구", "연제구"}
+
+
+def signed(v, unit="%"):
+    if v is None:
+        return "–"
+    cls = "up" if v > 0 else ("down" if v < 0 else "")
+    return f'<b class="{cls}">{v:+.2f}{unit}</b>'
+
+
+def temperature_section(ctx):
+    rows = ctx.get("reb")
+    if not rows:
+        return '<p class="sub">부동산원 주간 지수를 아직 받지 못했습니다.</p>'
+    gus = sorted([r for r in rows if r["level"] == 3], key=lambda r: r["sale_wk"] or 0, reverse=True)
+    busan = next(r for r in rows if r["level"] == 1)
+    top = max(abs(r["sale_wk"] or 0) for r in gus) or 1
+    bars = ""
+    for r in gus:
+        v = r["sale_wk"] or 0
+        w = abs(v) / top * 100
+        neg = f'<span style="width:{w:.0f}%"></span>' if v < 0 else ""
+        pos = f'<span style="width:{w:.0f}%"></span>' if v > 0 else ""
+        mine = " mine" if r["name"] in WATCH_GU else ""
+        bars += (f'<div class="drow{mine}"><div class="nm">{e(r["name"])}</div><div class="neg">{neg}</div>'
+                 f'<div class="pos">{pos}</div><div class="val">{v:+.2f}</div></div>')
+    trs = ""
+    for r in [busan] + gus:
+        mine = r["name"] in WATCH_GU or r["level"] == 1
+        ss, js = r["sale_streak"], r["jeonse_streak"]
+        trs += (f'<tr{" class=mine" if mine else ""}><td>{"<b>" if mine else ""}{e(r["name"])}{"</b>" if mine else ""}</td>'
+                f'<td class="num">{signed(r["sale_wk"])}<br><span class="unit">{ss[1]}주 {ss[0]}</span></td>'
+                f'<td class="num">{signed(r["sale_4w"])}</td><td class="num">{signed(r["sale_ytd"])}</td>'
+                f'<td class="num">{signed(r["jeonse_wk"])}<br><span class="unit">{js[1]}주 {js[0]}</span></td>'
+                f'<td class="num">{signed(r["jeonse_ytd"])}</td></tr>')
+    bs = busan["sale_streak"]
+    return f'''
+<p class="sub">한국부동산원 주간 아파트 가격지수({e(busan["date"])} 조사 기준). 굵은 글씨가 관심 6개 구입니다.
+부산 전체 매매 {signed(busan["sale_wk"])}({bs[1]}주 연속 {bs[0]}), 전세 {signed(busan["jeonse_wk"])}({busan["jeonse_streak"][1]}주 연속 {busan["jeonse_streak"][0]}).</p>
+<h4>매매가격 주간 변동률 (%)</h4>
+<div class="div">{bars}<div class="axis"><span></span><span>← 하락</span><span>상승 →</span><span></span></div></div>
+<div class="chart-box small" style="margin-top:12px"><canvas id="rebchart" role="img" aria-label="부산 아파트 매매·전세 주간 지수 꺾은선"></canvas></div>
+<h4>구별 표 <span class="sub">(주간·4주·올해 누계 변동률, %)</span></h4>
+<div class="scroll"><table><thead><tr><th>지역</th><th>매매 주간</th><th>매매 4주</th><th>매매 올해</th><th>전세 주간</th><th>전세 올해</th></tr></thead>
+<tbody>{trs}</tbody></table></div>
+<p class="sub">지수는 표본 아파트의 시세 변화를 모은 값이라 개별 단지 실거래와 다를 수 있습니다. 주간 −0.02%는 10억 원 아파트로 치면 한 주에 20만 원 수준이라, 한 주보다 몇 주째 같은 방향인지를 보세요.</p>'''
+
+
 STATUS_CLASS = {"적중": "hit", "빗나감": "miss", "표본 부족": "", "진행 중": "wait", "신고 기다림": "wait", "대기": ""}
 
 
@@ -340,6 +388,16 @@ b.up{color:var(--up)} b.down{color:var(--s1)}
 .tag.hot{background:transparent;border:1px solid var(--up);color:var(--up)}
 .tag.cold{background:transparent;border:1px solid var(--s1);color:var(--s1)}
 .chart-box.small{height:220px}
+.div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.drow{display:grid;grid-template-columns:64px 1fr 1fr 52px;align-items:center;margin:4px 0;font-size:.85rem}
+.drow .neg,.drow .pos{height:14px;position:relative}
+.drow .neg{border-right:1px solid var(--text)}
+.drow .neg span{position:absolute;right:0;top:0;bottom:0;background:var(--s1);border-radius:2px 0 0 2px}
+.drow .pos span{position:absolute;left:0;top:0;bottom:0;background:var(--up);border-radius:0 2px 2px 0}
+.drow .val{text-align:right;font-variant-numeric:tabular-nums}
+.drow.mine .nm{font-weight:700;color:var(--accent)}
+.axis{display:grid;grid-template-columns:64px 1fr 1fr 52px;font-size:.72rem;color:var(--muted)}
+.axis span:nth-child(3){text-align:right}
 td.wrap{white-space:normal;min-width:180px;max-width:280px}
 .tag.hit{background:transparent;border:1px solid var(--s3);color:var(--s3)}
 .tag.miss{background:transparent;border:1px solid var(--up);color:var(--up)}
@@ -422,7 +480,19 @@ JS = r"""
           var m=v.months[from+c.dataIndex]; return '매매: '+c.raw+'건'+(v.incomplete.indexOf(m)>=0?' (신고 진행 중)':''); }}}},
         scales:axes(function(v){return v;})}});
   }
-  function drawAll(){ drawTrend(); drawCompares(); drawVolume(); }
+  function drawReb(){
+    var el=document.getElementById('rebchart'); if(!el||!data.reb.length) return;
+    if(charts.reb) charts.reb.destroy();
+    var cnt=data.reb.map(function(){return null;});
+    charts.reb=new Chart(el,{type:'line',data:{labels:data.reb.map(function(r){return r.d.slice(2).replace(/-/g,'.');}),
+      datasets:[line('부산 매매지수', data.reb.map(function(r){return r.s;}), cnt, css('--s1')),
+                line('부산 전세지수', data.reb.map(function(r){return r.j;}), cnt, css('--s2'))]},
+      options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+        elements:{point:{radius:0}}, plugins:{legend:legend(), tooltip:{callbacks:{label:function(c){
+          return c.dataset.label+': '+(c.raw==null?'-':c.raw.toFixed(2)); }}}},
+        scales:axes(function(v){return v.toFixed(0);})}});
+  }
+  function drawAll(){ drawTrend(); drawCompares(); drawVolume(); drawReb(); }
   drawAll();
   if(window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawAll);
 })();
@@ -455,7 +525,9 @@ def build():
                          "a_color": color_of(cp["a"]), "b_color": color_of(cp["b"])})
     v = ctx["volume"]
     base = [t for m, t in zip(v["months"], v["total"]) if m not in v["incomplete"]]
-    payload = dict(ctx["chart"], compares=compares,
+    reb_busan = next((r for r in (ctx.get("reb") or []) if r["level"] == 1), None)
+    reb_series = ([{"d": d, "s": sv, "j": jv} for _, d, sv, jv in reb_busan["series"][-156:]] if reb_busan else [])
+    payload = dict(ctx["chart"], compares=compares, reb=reb_series,
                    volume={"months": v["months"], "total": v["total"], "incomplete": v["incomplete"],
                            "avg": sum(base) / len(base) if base else 0})
     chart_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
@@ -505,6 +577,9 @@ def build():
 <h2>두 단지 비교</h2>
 <p class="sub">노트에서 자주 비교하는 단지쌍입니다. 면적 차이를 없애려고 3.3㎡당 가격으로 봅니다. 단지쌍은 config/watchlist.json의 compare에서 바꿀 수 있습니다.</p>
 {compare_section(ctx, None)}
+
+<h2>구별 온도 <span class="sub">한국부동산원 주간 지수</span></h2>
+{temperature_section(ctx)}
 
 <h2>거래량 온도</h2>
 {volume_section(ctx)}
