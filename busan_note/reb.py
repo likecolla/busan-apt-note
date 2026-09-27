@@ -72,41 +72,59 @@ def busan_regions(key):
             if r["ITM_TAG"] == "분류" and r["ITM_FULLNM"].split(">")[0] == BUSAN_ROOT]
 
 
-def collect_weekly(log=print):
-    """부산 전체·권역·구군 주간 매매/전세 지수를 받아 data/reb/weekly.json 에 저장. 실패 목록 반환."""
+def _week_back(keys, n):
+    """저장된 주차 목록에서 n개 앞 주차(없으면 처음 주차)."""
+    ks = sorted(keys)
+    return ks[max(0, len(ks) - n)] if ks else START_WEEK
+
+
+def collect_weekly(log=print, refetch_weeks=6):
+    """부산 주간 매매/전세 지수를 받아 data/reb/weekly.json 에 합쳐 저장. 실패 목록 반환.
+
+    - 저장된 자료가 있으면 최근 refetch_weeks 주만 다시 받아 합친다(수정 반영).
+    - 지역을 지정하지 않고 전국을 한 번에 받아 부산만 골라, 호출 수를 줄인다.
+    - 받지 못한 자료는 기존 값을 그대로 둔다.
+    """
     import json
     key = get_key()
-    # 첫 호출로 접속 가능 여부를 빨리 확인한다(해외 서버에서 막히는 경우 대비).
+    old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     t0 = time.time()
     try:
-        itm = call("SttsApiTblItm.do", key, timeout=15, retries=(5,), STATBL_ID=TABLES["sale"])
+        itm = call("SttsApiTblItm.do", key, timeout=15, retries=(5, 20), STATBL_ID=TABLES["sale"])
     except RebError as e:
         raise RebError(f"부동산원 접속 실패({time.time() - t0:.0f}초): " + mask(e))
     log(f"부동산원 접속 확인 ({time.time() - t0:.1f}초)")
-    regions = [(r["ITM_ID"], r["ITM_FULLNM"]) for r in itm
-               if r["ITM_TAG"] == "분류" and r["ITM_FULLNM"].split(">")[0] == BUSAN_ROOT]
-    out, failures = {}, []
-    for cid, full in regions:
-        name = full.split(">")[-1]
-        series = {}
-        for kind, tbl in TABLES.items():
-            try:
-                rows = call("SttsApiTblData.do", key, STATBL_ID=tbl, DTACYCLE_CD="WK",
-                            CLS_ID=cid, START_WRTTIME=START_WEEK)
-            except RebError as e:
-                msg = mask(e)[:160]
-                failures.append({"kind": f"부동산원 {'매매' if kind == 'sale' else '전세'}지수", "gu": name, "ym": "", "error": msg})
-                log(f"실패: 부동산원 {kind} {name} — {msg}")
+    regions = {r["ITM_ID"]: r["ITM_FULLNM"] for r in itm
+               if r["ITM_TAG"] == "분류" and r["ITM_FULLNM"].split(">")[0] == BUSAN_ROOT}
+    out = {full.split(">")[-1]: old.get(full.split(">")[-1], {"full": full, "weeks": {}}) for full in regions.values()}
+    all_weeks = {k for v in out.values() for k in v["weeks"]}
+    start = _week_back(all_weeks, refetch_weeks) if all_weeks else START_WEEK
+    failures = []
+    for kind, tbl in TABLES.items():
+        label = f"부동산원 {'매매' if kind == 'sale' else '전세'}지수"
+        try:
+            rows = call("SttsApiTblData.do", key, timeout=30, retries=(5, 20, 60),
+                        STATBL_ID=tbl, DTACYCLE_CD="WK", START_WRTTIME=start)
+        except RebError as e:
+            msg = mask(e)[:160]
+            failures.append({"kind": label, "gu": "부산 전체", "ym": start, "error": msg})
+            log(f"실패: {label} — {msg} (기존 자료 유지)")
+            continue
+        n = 0
+        for r in rows:
+            full = regions.get(r["CLS_ID"])
+            if not full:
                 continue
-            for r in rows:
-                w = series.setdefault(r["WRTTIME_IDTFR_ID"], {"date": r["WRTTIME_DESC"]})
-                w[kind] = r["DTA_VAL"]
-            time.sleep(0.3)
-        out[name] = {"full": full, "weeks": dict(sorted(series.items()))}
-    if out:
-        OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    log(f"부동산원 주간 지수: {len(out)}개 지역 저장, 실패 {len(failures)}건")
+            w = out[full.split(">")[-1]]["weeks"].setdefault(r["WRTTIME_IDTFR_ID"], {"date": r["WRTTIME_DESC"]})
+            w[kind] = r["DTA_VAL"]
+            n += 1
+        log(f"{label}: {start}부터 부산 {n}건")
+        time.sleep(1)
+    for v in out.values():
+        v["weeks"] = dict(sorted(v["weeks"].items()))
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log(f"부동산원 주간 지수: {len(out)}개 지역, 실패 {len(failures)}건")
     return failures
 
 
