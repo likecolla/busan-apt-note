@@ -206,7 +206,7 @@ def new_section(ctx):
 
     html = ""
     if ctx["new_watch"]:
-        html += (f'<h4>핵심 6곳 <span class="sub">({len(ctx["new_watch"])}건)</span></h4>'
+        html += (f'<h4>핵심 단지 <span class="sub">({len(ctx["new_watch"])}건)</span></h4>'
                  f'<div class="scroll"><table>{head}<tbody>{rows(ctx["new_watch"], True)}</tbody></table></div>')
     if ctx["new_other"]:
         html += ('<h4>관심 6개 구 나머지 <span class="sub">(금액 높은 순 최대 20건)</span></h4>'
@@ -388,9 +388,9 @@ def routine_box(ctx):
         st = busan["sale_streak"]
         steps.append(("temp", "구별 시세 흐름", f'부산 매매 {busan["sale_wk"]:+.2f}%({st[1]}주 연속 {st[0]}), 관심 6개 구 중 {up}곳 상승'))
     nw = len(ctx["new_watch"])
-    steps.append(("new", "새로 신고된 거래", f'{ctx["new_total"]:,}건, 그중 핵심 6곳 {nw}건'))
+    steps.append(("new", "새로 신고된 거래", f'{ctx["new_total"]:,}건, 그중 핵심 단지 {nw}건'))
     few_n = sum(1 for c in ctx["cards"] if c["low_sample"])
-    steps.append(("core", "핵심 6곳 카드", f'3개월 중간값과 1년 전 대비를 보고, "표본 적음" {few_n}곳은 한두 건으로 판단하지 않기'))
+    steps.append(("core", "핵심 단지 카드", f'3개월 중간값과 1년 전 대비를 보고, "표본 적음" {few_n}곳은 한두 건으로 판단하지 않기'))
     preds = ctx.get("predictions") or []
     live = sum(1 for p in preds if p["status"] in ("진행 중", "신고 기다림"))
     done = [p for p in preds if p["status"] in ("적중", "빗나감")]
@@ -406,7 +406,7 @@ def routine_box(ctx):
 <p>한 주의 숫자보다 <b>같은 방향이 몇 주 이어졌는지</b>를 봅니다. 4주 이상이면 흐름으로 읽습니다. 주간 −0.01%는 10억 원 아파트로 한 주에 10만 원 수준이라 크기보다 방향이 중요합니다.</p>
 <h4>② 새로 신고된 거래 — 이번 주에 생긴 일</h4>
 <p>신고가와 해제 거래를 확인합니다. 신고는 계약 후 30일 안에 하므로 여기 나온 거래는 지난달 계약일 수 있어, 계약일을 함께 봅니다.</p>
-<h4>③ 핵심 6곳 카드 — 내 관심 단지의 위치</h4>
+<h4>③ 핵심 단지 카드 — 내 관심 단지의 위치</h4>
 <ul>
 <li><b>최근 거래</b>는 한 건이라 층·조망에 따라 크게 흔들립니다.</li>
 <li><b>3개월 중간값</b>이 지금 시세에 가장 가깝습니다. "표본 적음"(5건 미만)이면 근거로 쓰지 않습니다.</li>
@@ -705,7 +705,7 @@ def build():
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>부산 대단지 실거래 노트</title>
-<meta name="description" content="부산 관심 단지 6곳의 매매·분양권·전월세 실거래 기록">
+<meta name="description" content="부산 관심 단지의 매매·분양권·전월세 실거래 기록">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -722,7 +722,7 @@ def build():
 </header>
 {routine_box(ctx)}
 
-<h2 id="core">핵심 6곳</h2>
+<h2 id="core">핵심 단지</h2>
 <div class="guide">
   <p><b>읽는 법</b> 84㎡형(34평형) = 전용 75~90㎡. 해제된 거래는 계산에서 빼고 표에만 취소선으로 남깁니다. 직거래는 계산에 포함합니다.</p>
   <p><b>3.3㎡당 가격</b>은 면적이 달라도 비교할 수 있게 거래가를 평 단위로 나눈 값입니다. 75㎡대와 84㎡대가 섞인 단지는 이 값이 더 정확합니다.</p>
