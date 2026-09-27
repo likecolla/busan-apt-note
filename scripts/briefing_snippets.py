@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from busan_note import analyze, collect  # noqa: E402
-from busan_note.money import format_won, korean_unit  # noqa: E402
+from busan_note.money import format_won, korean_unit, pyeong_type  # noqa: E402
 
 GU_ORDER = ["26350", "26500", "26290", "26230", "26260", "26470"]
 GU_SHORT = {"26350": "해운대", "26500": "수영", "26290": "남구", "26230": "부산진",
@@ -39,16 +39,7 @@ def d_short(iso):
 
 
 def area_floor(r):
-    return f'{r["area"]:.1f}㎡ ({pyeong(r["area"])}) · {e(r["floor"])}층'
-
-
-def pyeong(area):
-    """전용면적 ㎡ → 흔히 부르는 평형(공급면적 기준). 59·84㎡는 관례값, 나머지는 전용률 약 75%로 어림."""
-    if 57 <= area < 61:
-        return "25평형"
-    if 83 <= area < 86:
-        return "34평형"
-    return f"약 {round(area * 1.33 / 3.3058)}평형"
+    return f'{r["area"]:.1f}㎡ ({pyeong_type(r["area"])}) · {e(r["floor"])}층'
 
 
 def pct(v):

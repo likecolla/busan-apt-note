@@ -18,3 +18,14 @@ def format_won(won):
         return "-"
     won = int(round(won))
     return f"{won:,}원 ({korean_unit(won)})"
+
+
+def pyeong_type(area):
+    """전용면적 ㎡ → 흔히 부르는 평형(공급면적 기준). 59·84㎡는 관례값, 나머지는 전용률 약 75%로 어림."""
+    if area is None:
+        return ""
+    if 57 <= area < 61:
+        return "25평형"
+    if 83 <= area < 86:
+        return "34평형"
+    return f"약 {round(area * 1.33 / 3.3058)}평형"
