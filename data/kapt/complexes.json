@@ -118,5 +118,26 @@
   "subway": "1호선",
   "subway_time": "",
   "ev": 206
+ },
+ "남천자이": {
+  "fetched": "2026-09-28",
+  "codes": [
+   [
+    "A10023420",
+    "남천자이아파트"
+   ]
+  ],
+  "units": 913,
+  "dongs": 7,
+  "top": 36,
+  "used": "20230119",
+  "used_last": "20230119",
+  "park": 1304,
+  "park_per_unit": 1.43,
+  "builder": "GS건설",
+  "heat": "개별난방",
+  "subway": "2호선",
+  "subway_time": "5분이내",
+  "ev": 26
  }
 }
