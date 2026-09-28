@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from busan_note import analyze, collect  # noqa: E402
-from busan_note.money import format_won, korean_unit  # noqa: E402
+from busan_note.money import format_won, korean_unit, pyeong_type  # noqa: E402
 
 GU_ORDER = ["26350", "26500", "26290", "26230", "26260", "26470"]
 GU_SHORT = {"26350": "해운대", "26500": "수영", "26290": "남구", "26230": "부산진",
@@ -39,7 +39,7 @@ def d_short(iso):
 
 
 def area_floor(r):
-    return f'{r["area"]:.1f}㎡ · {e(r["floor"])}층'
+    return f'{r["area"]:.1f}㎡ ({pyeong_type(r["area"])}) · {e(r["floor"])}층'
 
 
 def pct(v):
@@ -73,7 +73,7 @@ def core_table(ctx):
                     f'<td class="num">{latest}</td><td class="num">{med}</td>'
                     f'<td class="num">{ppy}</td><td class="num">{peak}</td></tr>')
     return ('<div class="scroll"><table>'
-            '<tr><th>단지</th><th>84㎡형 최근 거래</th><th>최근 3개월 중간값</th><th>3.3㎡당 (모든 면적)</th><th>84㎡형 최고가(5년)</th></tr>'
+            '<tr><th>단지</th><th>84㎡형(34평형) 최근 거래</th><th>최근 3개월 중간값</th><th>3.3㎡(1평)당 가격 (전체 면적)</th><th>84㎡형(34평형) 최고가 (최근 5년)</th></tr>'
             + "".join(rows) + "</table></div>")
 
 

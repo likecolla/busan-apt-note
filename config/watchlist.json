@@ -73,6 +73,17 @@
       "views": [
         "trade"
       ]
+    },
+    {
+      "name": "남천자이",
+      "gu": "수영구",
+      "lawd": "26500",
+      "names": [
+        "남천자이"
+      ],
+      "views": [
+        "trade"
+      ]
     }
   ],
   "_설명_reference": "reference: 카드는 만들지 않고 compare(두 단지 비교)에만 쓰는 단지.",

@@ -3,7 +3,7 @@ import json
 from html import escape
 
 from . import analyze, api, collect
-from .money import format_won
+from .money import format_won, pyeong_type
 
 SITE = api.ROOT / "site"
 
@@ -44,7 +44,7 @@ def tags(r):
 
 def area_txt(r):
     a = r.get("area")
-    return f'{a:.2f}㎡' if a is not None else "-"
+    return f'{a:.2f}㎡ ({pyeong_type(a)})' if a is not None else "-"
 
 
 def floor_txt(r):
@@ -55,7 +55,7 @@ def deal_row(r, extra_cols=()):
     cls = ' class="cancelled"' if r.get("cancelled") else ""
     cells = [f"<td>{e(c)}</td>" for c in extra_cols]
     return (f"<tr{cls}>{''.join(cells)}<td>{e(r['date'][2:].replace('-', '.'))}</td>"
-            f"<td>{r['area']:.1f}</td><td>{floor_txt(r)}</td>"
+            f"<td>{r['area']:.1f}<br><span class='sub'>{pyeong_type(r['area'])}</span></td><td>{floor_txt(r)}</td>"
             f"<td class='num'>{deal_money(r)}</td><td>{tags(r)}</td></tr>")
 
 
@@ -84,7 +84,7 @@ def card_html(c):
         latest = '<div class="sub">84㎡형 거래 없음</div>'
     med = (f'{money_html(c["med3"])} <span class="sub">({c["n3"]}건)</span>{few(c["n3"])}'
            if c["med3"] else '<span class="sub">최근 3개월 84㎡형 거래 없음</span>')
-    ppy = (f'<div class="stat"><div class="label">3.3㎡당 중간값 (최근 3개월, 모든 면적)</div>'
+    ppy = (f'<div class="stat"><div class="label">3.3㎡(1평)당 중간값 (최근 3개월, 전체 면적)</div>'
            f'<div><b>{ppy_txt(c["ppy3"])}</b> <span class="sub">({c["ppy3_n"]}건)</span>{few(c["ppy3_n"])}'
            + (f'<br><span class="sub">1년 전 같은 3개월 {ppy_txt(c["ppy_prev"])} ({c["ppy_prev_n"]}건) 대비</span> {pct_html(c["yoy"])}'
               if c["ppy_prev_n"] else '<br><span class="sub">1년 전 같은 기간 거래 없음</span>')
@@ -180,7 +180,7 @@ def card_html(c):
   </div>
   <h4>최근 {e(c["kind_ko"])} 거래 5건 <span class="sub">(최근 6개월 {c["n6"]}건)</span></h4>
   <div class="scroll"><table>
-    <thead><tr><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>
+    <thead><tr><th>계약일</th><th>전용면적(㎡)</th><th>층</th><th>금액</th><th>비고</th></tr></thead>
     <tbody>{rows}</tbody>
   </table></div>
   {more}
@@ -195,7 +195,7 @@ def new_section(ctx):
             return ('<p class="sub">이번 실행은 ' + e("·".join(meta["baseline_kinds"])) +
                     ' 과거 자료를 채우는 수집이라 기준선으로 저장했습니다. 다음 갱신부터 새로 신고된 거래가 여기에 표시됩니다.</p>')
         return '<p class="sub">이번 갱신에서 새로 신고된 거래가 없습니다.</p>'
-    head = "<thead><tr><th>단지</th><th>구분</th><th>계약일</th><th>전용㎡</th><th>층</th><th>금액</th><th>표시</th></tr></thead>"
+    head = "<thead><tr><th>단지</th><th>구분</th><th>계약일</th><th>전용면적(㎡)</th><th>층</th><th>금액</th><th>비고</th></tr></thead>"
 
     def rows(lst, watch):
         out = []
@@ -206,7 +206,7 @@ def new_section(ctx):
 
     html = ""
     if ctx["new_watch"]:
-        html += (f'<h4>핵심 6곳 <span class="sub">({len(ctx["new_watch"])}건)</span></h4>'
+        html += (f'<h4>핵심 단지 <span class="sub">({len(ctx["new_watch"])}건)</span></h4>'
                  f'<div class="scroll"><table>{head}<tbody>{rows(ctx["new_watch"], True)}</tbody></table></div>')
     if ctx["new_other"]:
         html += ('<h4>관심 6개 구 나머지 <span class="sub">(금액 높은 순 최대 20건)</span></h4>'
@@ -342,7 +342,7 @@ def supply_section(ctx):
 <div class="scroll"><table><thead><tr><th>구</th><th>미분양</th><th>전월 대비</th><th>1년 전 대비</th><th>준공 후 미분양</th></tr></thead><tbody>{rows}</tbody></table></div>
 <h4>인구 순이동 <span class="sub">(전입 − 전출)</span></h4>
 <div class="scroll"><table><thead><tr><th>구</th><th>최근 월</th><th>최근 3개월</th><th>최근 12개월</th></tr></thead><tbody>{mrows}</tbody></table></div>
-<p class="sub">착공은 2~3년 뒤 입주 물량의 선행 지표입니다. 착공이 줄면 몇 년 뒤 신축 공급이 줄어 전세·신축 가격을 받치는 쪽으로, 미분양(특히 준공 후 미분양)이 늘면 누르는 쪽으로 작용하는 경우가 많습니다. 인구 순이동은 주소 이전 기준이라 실제 수요와 다를 수 있습니다.</p>'''
+<p class="sub">착공은 2~3년 뒤 입주 물량의 선행 지표입니다. 착공이 줄면 몇 년 뒤 신축 공급이 줄어 전세·신축 가격에 상승 요인으로, 미분양(특히 준공 후 미분양)이 늘면 하락 요인으로 작용하는 경우가 많습니다. 인구 순이동은 주소 이전 기준이라 실제 수요와 다를 수 있습니다.</p>'''
 
 
 def presale_section(ctx):
@@ -379,18 +379,18 @@ def presale_section(ctx):
 
 
 def routine_box(ctx):
-    """월·목 5분 루틴: 볼 순서와 이번 갱신의 한 줄 요약."""
+    """월·목 5분 점검: 볼 순서와 이번 갱신의 한 줄 요약."""
     steps = []
     rows = ctx.get("reb") or []
     busan = next((r for r in rows if r["level"] == 1), None)
     if busan:
         up = sum(1 for r in rows if r["level"] == 3 and r["name"] in WATCH_GU and (r["sale_wk"] or 0) > 0)
         st = busan["sale_streak"]
-        steps.append(("temp", "구별 온도", f'부산 매매 {busan["sale_wk"]:+.2f}%({st[1]}주 연속 {st[0]}), 관심 6개 구 중 {up}곳 상승'))
+        steps.append(("temp", "구별 시세 흐름", f'부산 매매 {busan["sale_wk"]:+.2f}%({st[1]}주 연속 {st[0]}), 관심 6개 구 중 {up}곳 상승'))
     nw = len(ctx["new_watch"])
-    steps.append(("new", "새로 신고된 거래", f'{ctx["new_total"]:,}건, 그중 핵심 6곳 {nw}건'))
+    steps.append(("new", "새로 신고된 거래", f'{ctx["new_total"]:,}건, 그중 핵심 단지 {nw}건'))
     few_n = sum(1 for c in ctx["cards"] if c["low_sample"])
-    steps.append(("core", "핵심 6곳 카드", f'3개월 중간값과 1년 전 대비를 보고, "표본 적음" {few_n}곳은 한두 건으로 판단하지 않기'))
+    steps.append(("core", "핵심 단지 카드", f'3개월 중간값과 1년 전 대비를 보고, "표본 적음" {few_n}곳은 한두 건으로 판단하지 않기'))
     preds = ctx.get("predictions") or []
     live = sum(1 for p in preds if p["status"] in ("진행 중", "신고 기다림"))
     done = [p for p in preds if p["status"] in ("적중", "빗나감")]
@@ -399,14 +399,14 @@ def routine_box(ctx):
     steps.append(("pred", "예측 기록장", f'진행 중 {live}개 · 채점 {len(done)}개(적중 {hit})' + (f' · 다음 채점 {nxt}' if nxt else "")))
     steps.append(("supply", "공급과 수요 · 분양·청약", "월 1회: 미분양, 착공, 인구 이동, 새 분양 경쟁률"))
     lis = "".join(f'<li><a href="#{a}">{e(t)}</a><span class="sub"> — {e(d)}</span></li>' for a, t, d in steps)
-    return f'''<nav class="routine" aria-label="월·목 5분 루틴"><h2>월·목 5분 루틴</h2><ol>{lis}</ol>
+    return f'''<nav class="routine" aria-label="월·목 5분 점검"><h2>월·목 5분 점검</h2><ol>{lis}</ol>
 <p class="sub">위에서부터 차례로 봅니다. 숫자 하나로 결론을 내리지 말고, 몇 주째 같은 방향인지와 표본 수를 함께 보세요.</p>
 <details class="howto"><summary>읽는 법 자세히</summary>
-<h4>① 구별 온도 — 시장 전체의 방향</h4>
+<h4>① 구별 시세 흐름 — 시장 전체의 방향</h4>
 <p>한 주의 숫자보다 <b>같은 방향이 몇 주 이어졌는지</b>를 봅니다. 4주 이상이면 흐름으로 읽습니다. 주간 −0.01%는 10억 원 아파트로 한 주에 10만 원 수준이라 크기보다 방향이 중요합니다.</p>
 <h4>② 새로 신고된 거래 — 이번 주에 생긴 일</h4>
 <p>신고가와 해제 거래를 확인합니다. 신고는 계약 후 30일 안에 하므로 여기 나온 거래는 지난달 계약일 수 있어, 계약일을 함께 봅니다.</p>
-<h4>③ 핵심 6곳 카드 — 내 관심 단지의 위치</h4>
+<h4>③ 핵심 단지 카드 — 내 관심 단지의 위치</h4>
 <ul>
 <li><b>최근 거래</b>는 한 건이라 층·조망에 따라 크게 흔들립니다.</li>
 <li><b>3개월 중간값</b>이 지금 시세에 가장 가깝습니다. "표본 적음"(5건 미만)이면 근거로 쓰지 않습니다.</li>
@@ -418,7 +418,7 @@ def routine_box(ctx):
 <h4>④ 예측 기록장 — 내 판단 점검</h4>
 <p>빗나갔을 때 왜 빗나갔는지 한 줄 적어 두는 것이 목적입니다.</p>
 <h4>⑤ 월 1회 — 분양·청약, 공급과 수요, 거래량</h4>
-<p>누르는 힘(미분양 증가, 청약 미달, 금리)과 받치는 힘(착공 감소, 인구 유입, 전세 상승)을 나눠 적어 봅니다.</p>
+<p>하락 요인(미분양 증가, 청약 미달, 금리 상승)과 상승 요인(착공 감소, 인구 유입, 전세 상승)을 나눠 적어 봅니다.</p>
 <h4>종합해서 읽기</h4>
 <p>여러 신호가 <b>같은 방향</b>인지 맞춰 봅니다. 지수·인구·청약이 모두 같은 쪽이면 신호가 강하고, 엇갈리면 결론을 서두르지 않습니다.</p>
 <h4>하지 말 것</h4>
@@ -446,7 +446,7 @@ def prediction_section(ctx):
                  f'<td><span class="tag {STATUS_CLASS.get(p["status"], "")}">{e(p["status"])}</span></td></tr>')
     return f'''
 <p class="sub">질문에 미리 답(기준값)을 적어 두고, 기간이 끝나고 신고 기한 2개월이 지나면 실거래로 자동 채점합니다.
-예측은 config/predictions.json에서 더하거나 고칩니다. 맞히는 것보다 왜 빗나갔는지 돌아보는 것이 목적입니다.</p>
+맞히는 것보다 왜 빗나갔는지 돌아보는 것이 목적입니다.</p>
 <div class="scroll"><table><thead><tr><th>질문</th><th>기간</th><th>기준</th><th>실거래</th><th>상태</th></tr></thead>
 <tbody>{rows}</tbody></table></div>'''
 
@@ -604,7 +604,7 @@ JS = r"""
     document.querySelectorAll('.seg button').forEach(function(b){
       var on=(b.dataset.metric&&b.dataset.metric===state.metric)||(b.dataset.range!=null&&+b.dataset.range===state.range);
       b.setAttribute('aria-pressed', on?'true':'false'); });
-    document.getElementById('trend-title').textContent=key==='p84'?'84㎡형 월별 중간값':'3.3㎡당 월별 중간값 (모든 면적)';
+    document.getElementById('trend-title').textContent=key==='p84'?'84㎡형 월별 중간값':'3.3㎡(1평)당 월별 중간값 (전체 면적)';
   }
   document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){
     if(b.dataset.metric) state.metric=b.dataset.metric; else state.range=+b.dataset.range;
@@ -705,7 +705,7 @@ def build():
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>부산 대단지 실거래 노트</title>
-<meta name="description" content="부산 관심 단지 6곳의 매매·분양권·전월세 실거래 기록">
+<meta name="description" content="부산 관심 단지의 매매·분양권·전월세 실거래 기록">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -722,9 +722,9 @@ def build():
 </header>
 {routine_box(ctx)}
 
-<h2 id="core">핵심 6곳</h2>
+<h2 id="core">핵심 단지</h2>
 <div class="guide">
-  <p><b>읽는 법</b> 84㎡형 = 전용 75~90㎡. 해제된 거래는 계산에서 빼고 표에만 취소선으로 남깁니다. 직거래는 계산에 포함합니다.</p>
+  <p><b>읽는 법</b> 84㎡형(34평형) = 전용 75~90㎡. 해제된 거래는 계산에서 빼고 표에만 취소선으로 남깁니다. 직거래는 계산에 포함합니다.</p>
   <p><b>3.3㎡당 가격</b>은 면적이 달라도 비교할 수 있게 거래가를 평 단위로 나눈 값입니다. 75㎡대와 84㎡대가 섞인 단지는 이 값이 더 정확합니다.</p>
   <p><b>표본 적음</b>은 거래가 5건 미만이라는 뜻입니다. 한두 건으로 시세를 판단하지 마세요.</p>
 </div>
@@ -744,10 +744,10 @@ def build():
 <details><summary>표로 보기</summary>{chart_table(ctx["chart"])}</details>
 
 <h2>두 단지 비교</h2>
-<p class="sub">노트에서 자주 비교하는 단지쌍입니다. 면적 차이를 없애려고 3.3㎡당 가격으로 봅니다. 단지쌍은 config/watchlist.json의 compare에서 바꿀 수 있습니다.</p>
+<p class="sub">노트에서 자주 비교하는 두 단지입니다. 면적 차이를 없애려고 3.3㎡당 가격으로 봅니다.</p>
 {compare_section(ctx, None)}
 
-<h2 id="temp">구별 온도 <span class="sub">한국부동산원 주간 지수</span></h2>
+<h2 id="temp">구별 시세 흐름 <span class="sub">한국부동산원 주간 지수</span></h2>
 {temperature_section(ctx)}
 
 <h2 id="presale">분양·청약 <span class="sub">청약홈</span></h2>
@@ -756,7 +756,7 @@ def build():
 <h2 id="supply">공급과 수요 <span class="sub">KOSIS</span></h2>
 {supply_section(ctx)}
 
-<h2>거래량 온도</h2>
+<h2>거래량 흐름</h2>
 {volume_section(ctx)}
 
 <h2 id="pred">예측 기록장</h2>
