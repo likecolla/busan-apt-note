@@ -1,5 +1,5 @@
 {
- "last_run": "2026-09-27T21:27",
+ "last_run": "2026-09-28T11:05",
  "baseline_kinds": [],
  "new_count": 0,
  "months": [
@@ -7,5 +7,18 @@
   "202608",
   "202609"
  ],
- "failures": []
+ "failures": [
+  {
+   "kind": "부동산원 매매지수",
+   "gu": "부산 전체",
+   "ym": "202634",
+   "error": "네트워크 오류: HTTPSConnectionPool(host='www.reb.or.kr', port=443): Max retries exceeded with url: /r-one/openapi/SttsApiTblData.do?STATBL_ID=T244183132827305&DTACYCL"
+  },
+  {
+   "kind": "부동산원 전세지수",
+   "gu": "부산 전체",
+   "ym": "202634",
+   "error": "네트워크 오류: HTTPSConnectionPool(host='www.reb.or.kr', port=443): Max retries exceeded with url: /r-one/openapi/SttsApiTblData.do?STATBL_ID=T247713133046872&DTACYCL"
+  }
+ ]
 }
