@@ -14,7 +14,7 @@ from html import escape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from busan_note import analyze, collect  # noqa: E402
+from busan_note import analyze, collect, market  # noqa: E402
 from busan_note.money import format_won, korean_unit, pyeong_type  # noqa: E402
 
 GU_ORDER = ["26350", "26500", "26290", "26230", "26260", "26470"]
@@ -163,6 +163,59 @@ def gu_stats(recs, now):
     return volume, gap, labels
 
 
+def _pc(v, digits=2):
+    if v is None:
+        return "–"
+    cls = "plus" if v > 0.005 else "minus" if v < -0.005 else ""
+    return f'<span class="{cls}">{v:+.{digits}f}%</span>'
+
+
+def _ymd(iso):
+    y, m, d = iso.split("-")
+    return f"{y}. {int(m)}."
+
+
+def region_table(rows):
+    def tr(r, bold):
+        n = f"<b>{e(r['name'])}</b>" if bold else e(r["name"])
+        sub = f"<br><small>{e(r['sub'])}</small>" if r["sub"] else ""
+        return (f'<tr><td>{n}{sub}</td><td class="num">{_pc(r["sale_wk"])}<br><small>올해 {r["sale_ytd"]:+.2f}%</small></td>'
+                f'<td class="num">{_pc(r["jeonse_wk"])}<br><small>올해 {r["jeonse_ytd"]:+.2f}%</small></td>'
+                f'<td class="num">{r["unsold"]:,}호<br><small>1년 전 {r["unsold_yago"]:,}호</small></td>'
+                f'<td class="num">{r["done"]:,}호</td><td class="num">{r["mig12"]:+,}명</td></tr>')
+    body = "".join(tr(r, True) for r in rows[1:]) + tr(rows[0], False)
+    return ('<div class="scroll"><table><tr><th>권역</th><th>매매 주간</th><th>전세 주간</th><th>미분양</th>'
+            '<th>준공 후 미분양</th><th>인구 순이동(12개월)</th></tr>' + body + "</table></div>")
+
+
+def phase_tables(rows, pts):
+    def tr(r):
+        p = r["pos"]
+        return (f'<tr><td><b>{e(r["name"])}</b></td>'
+                f'<td class="num">{_pc(p["vs_peak"], 1)}<br><small>{p["peak"]:.1f} ({_ymd(p["peak_date"])})</small></td>'
+                f'<td class="num">{p["low"]:.1f}<br><small>{_ymd(p["low_date"])}</small></td>'
+                f'<td class="num">{p["now"]:.1f}</td><td class="num">{_pc(p["ch26"])}</td><td><b>{e(p["state"])}</b></td></tr>')
+    idx = ('<div class="scroll"><table><tr><th>권역</th><th>2022년 고점 대비</th><th>최근 저점</th><th>현재 지수</th>'
+           '<th>최근 26주 대비</th><th>현재 상태</th></tr>' + "".join(tr(r) for r in rows) + "</table></div>")
+    cls = {market.YES: "plus", market.NO: "minus", market.MID: ""}
+    prow = "".join(f'<tr><td>{e(n)}</td><td>{e(t)}<span class="gr {g}">{ {"g1": "실거래", "g2": "공식 통계", "g3": "보도"}[g] }</span></td>'
+                   f'<td><span class="{cls[v]}">{e(v)}</span></td></tr>' for n, t, v, g in pts)
+    ptab = '<div class="scroll"><table><tr><th>포인트</th><th>현재 수치</th><th>판정</th></tr>' + prow + "</table></div>"
+    return idx, ptab
+
+
+def card_facts_html(ctx, asof):
+    out = {}
+    for c in ctx["cards"]:
+        up, down = market.card_facts(c)
+        if not up and not down:
+            continue
+        out[c["name"]] = (f'<div class="both"><p class="h">숫자로 본 현재 위치 (자동 계산, {asof} 기준, 판단은 직접)</p>'
+                          f'<p><span class="plus">상승 요인</span> {e(". ".join(up)) or "해당 없음"}</p>'
+                          f'<p><span class="minus">하락 요인</span> {e(". ".join(down)) or "해당 없음"}</p></div>')
+    return out
+
+
 def main():
     ctx = analyze.build_context()
     recs = collect.load_all()
@@ -191,6 +244,18 @@ def main():
         "volume": volume, "gap": gap, "months": labels, "volume_vs": volume_vs,
         "compare": compare_table(ctx), "predictions": prediction_table(ctx),
     }
+    kosis = market.load_kosis()
+    rows = market.region_rows(ctx["reb"], kosis)
+    pts = market.points(ctx, kosis, market.load_market_cfg())
+    n, lean = market.verdict(pts, rows[0]["pos"]["state"])
+    idx, ptab = phase_tables(rows, pts)
+    out.update({
+        "region": region_table(rows), "region_asof": rows[0]["date"],
+        "phase_index": idx, "phase_points": ptab,
+        "phase_count": n, "phase_lean": lean,
+        "phase_states": {r["name"]: r["pos"]["state"] for r in rows},
+        "card_facts": card_facts_html(ctx, out["asof"]),
+    })
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1)
 
 
