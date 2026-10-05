@@ -1,3 +1,7 @@
 [
-
+{"kind":"presale","lawd":"26230","umd":"가야동","apt":"힐스테이트 가야 1단지","aptSeq":"","jibun":"197","dong":"","date":"2026-10-01","area":84.0012,"floor":"23","price":888400000,"cancelled":false,"cancel_date":"","direct":true,"ownership":"","first_seen":"2026-10-05T11:06"},
+{"kind":"presale","lawd":"26230","umd":"부암동","apt":"서면 어반센트 데시앙","aptSeq":"","jibun":"산690-8","dong":"","date":"2026-10-02","area":59.9733,"floor":"21","price":541340000,"cancelled":false,"cancel_date":"","direct":true,"ownership":"","first_seen":"2026-10-05T11:06"},
+{"kind":"presale","lawd":"26230","umd":"부전동","apt":"쌍용 더 플래티넘 서면","aptSeq":"","jibun":"677","dong":"","date":"2026-10-02","area":84.9716,"floor":"37","price":737180000,"cancelled":false,"cancel_date":"","direct":true,"ownership":"","first_seen":"2026-10-05T11:06"},
+{"kind":"presale","lawd":"26230","umd":"가야동","apt":"힐스테이트 가야 1단지","aptSeq":"","jibun":"197","dong":"","date":"2026-10-02","area":84.0012,"floor":"29","price":896200000,"cancelled":false,"cancel_date":"","direct":true,"ownership":"","first_seen":"2026-10-05T11:06"},
+{"kind":"presale","lawd":"26290","umd":"문현동","apt":"롯데캐슬인피니엘","aptSeq":"","jibun":"1257","dong":"","date":"2026-10-01","area":84.9524,"floor":"11","price":762400000,"cancelled":false,"cancel_date":"","direct":true,"ownership":"","first_seen":"2026-10-05T11:06"}
 ]
