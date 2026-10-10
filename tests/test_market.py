@@ -59,6 +59,15 @@ class SpreadTest(unittest.TestCase):
         self.assertEqual(market.spread_trend(None, 1.0), "–")
 
 
+class HistoryTest(unittest.TestCase):
+    def test_month_end(self):
+        it = {"name": "부산", "series": [("202601", "2026-01-05", 100.0, 1), ("202602", "2026-01-26", 101.0, 1),
+                                        ("202605", "2026-02-02", 102.0, 1)]}
+        self.assertEqual(market.month_ends(it, 12), [("2026-01", "2026-01-26"), ("2026-02", "2026-02-02")])
+        self.assertEqual(market.month_end_index(it), {"2026-01": 101.0, "2026-02": 102.0})
+        self.assertEqual(len(market._cut(it, "2026-01-26")["series"]), 2)
+
+
 class CompareRegionTest(unittest.TestCase):
     def test_pick(self):
         from busan_note import reb
