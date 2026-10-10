@@ -227,6 +227,28 @@ def spread_table(rows):
             + "".join(tr(r) for r in rows) + "</table></div>")
 
 
+def history_table(rows):
+    def gp(v):
+        return "–" if v is None else f"{v:+.1f}%p"
+
+    def tr(r):
+        lg = r["log"]
+        if lg:
+            c = lg["count"]
+            note = "" if lg["asof"] == r["asof"] else f'<br><small>({_ymd(lg["asof"])} {int(lg["asof"][8:])}. 조사 기준)</small>'
+            pt = f'<b>{e(lg["lean"])}</b><br><small>있음 {c["있음"]} · 애매 {c["애매"]} · 반대 {c["반대"]}</small>{note}'
+        else:
+            pt = '<small>기록 전</small>'
+        y, m = r["month"].split("-")
+        return (f'<tr><td><b>{y}. {int(m)}.</b><br><small>{_ymd(r["asof"])} {int(r["asof"][8:])}. 조사</small></td>'
+                f'<td><b>{e(r["state"])}</b><br><small>26주 {_pc(r["ch26"])}</small></td><td>{pt}</td>'
+                f'<td class="num">{gp(r["upper_gap"])}</td><td class="num">{gp(r["seoul_gap"])}</td>'
+                f'<td class="mycall" data-month="{r["month"]}"><small>–</small></td></tr>')
+    return ('<div class="scroll"><table><tr><th>달</th><th>부산 지수 상태</th><th>포인트 판정</th>'
+            '<th>상급지 격차</th><th>서울 격차</th><th>내 판단</th></tr>'
+            + "".join(tr(r) for r in reversed(rows)) + "</table></div>")
+
+
 def card_facts_html(ctx, asof):
     out = {}
     for c in ctx["cards"]:
@@ -286,7 +308,11 @@ def main():
     out["spread_busan_line"] = (f"상급지 4개 구 평균과 서부산권의 1년 변동 차이 {up['ch52'] - west['ch52']:+.1f}%p"
                                 f"(반년 전 {up['ch52_prev'] - west['ch52_prev']:+.1f}%p)")
     cmp_items = reb.weekly_summary(reb.COMPARE_OUT) or []
-    seoul = [n for n in market.SEOUL_ROWS if n in {r["name"] for r in cmp_items}]
+    have = {r["name"] for r in cmp_items if len(r["series"]) >= 60}   # 과거 자료가 다 쌓인 지역만
+    seoul = [n for n in market.SEOUL_ROWS if n in have]
+    hist = market.history_rows(ctx["reb"], cmp_items, months=12)
+    out["history"] = history_table(hist)
+    out["history_index"] = market.month_end_index(next(r for r in ctx["reb"] if r["name"] == "부산"))
     out["spread_seoul"] = (spread_table(market.spread_rows(ctx["reb"] + cmp_items, "부산", seoul))
                            if "서울" in seoul else None)
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1)

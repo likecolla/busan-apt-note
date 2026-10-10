@@ -274,3 +274,63 @@ def spread_trend(gap, gap_prev, band=0.5):
 
 
 SEOUL_ROWS = ["서울", "강남구", "서초구", "송파구", "용산구", "마포구", "성동구", "수도권", "전국"]
+
+
+# ---- 판단 기록 (매달 쌓임) ----
+LOG = ROOT / "data" / "monthly_log.json"
+
+
+def load_log():
+    return json.loads(LOG.read_text(encoding="utf-8")) if LOG.exists() else {}
+
+
+def record_month(ctx, kosis=None, cfg=None):
+    """이번 달(부동산원 조사일 기준) 포인트 판정을 data/monthly_log.json에 적는다.
+    같은 달에 여러 번 돌면 마지막 값으로 덮어쓴다. 지수·격차는 시계열에서 다시 계산할 수 있어 적지 않는다."""
+    kosis = load_kosis() if kosis is None else kosis
+    cfg = load_market_cfg() if cfg is None else cfg
+    busan = next(r for r in ctx["reb"] if r["name"] == "부산")
+    pts = points(ctx, kosis, cfg)
+    n, lean = verdict(pts, None)
+    log = load_log()
+    log[busan["date"][:7]] = {"asof": busan["date"], "points": [[p[0], p[2]] for p in pts],
+                              "count": n, "lean": lean}
+    LOG.write_text(json.dumps(dict(sorted(log.items())), ensure_ascii=False, indent=1), encoding="utf-8")
+    return log
+
+
+def _cut(item, iso):
+    return {**item, "series": [x for x in item["series"] if x[1] <= iso]}
+
+
+def month_ends(item, months):
+    """item 시계열에서 달마다 마지막 조사 주: [(YYYY-MM, 날짜)] 최근 months개."""
+    last = {}
+    for _, d, _, _ in item["series"]:
+        last[d[:7]] = d
+    return sorted(last.items())[-months:]
+
+
+def history_rows(reb_items, cmp_items=(), months=12):
+    """최근 months개월, 달마다 마지막 조사 주 기준으로 다시 계산한 지수 상태와 격차."""
+    by = {r["name"]: r for r in list(reb_items) + list(cmp_items)}
+    log = load_log()
+    rows = []
+    for ym, iso in month_ends(by["부산"], months):
+        cut = [_cut(r, iso) for r in by.values()]
+        pos = index_position(next(r for r in cut if r["name"] == "부산"))
+        sp = spread_rows(cut, "부산", [], group=("상급지", UPPER))
+        seoul = None
+        if "서울" in by and len(by["서울"]["series"]) >= 60:
+            seoul = spread_rows(cut, "부산", ["서울"])[1]["gap"]
+        rows.append({"month": ym, "asof": iso, "index": pos["now"], "ch26": pos["ch26"], "state": pos["state"],
+                     "upper_gap": sp[-1]["gap"], "seoul_gap": seoul, "log": log.get(ym)})
+    return rows
+
+
+def month_end_index(item):
+    """달마다 마지막 조사 주의 지수: {YYYY-MM: 지수}. '내 판단' 채점에 쓴다."""
+    out = {}
+    for _, d, v, _ in item["series"]:
+        out[d[:7]] = round(v, 3)
+    return out

@@ -20,15 +20,16 @@
 2. Artifact `read` 액션으로 위 URL을 읽어 현재 판을 받는다 (작업본은 저장소에 없다).
 3. `python scripts/briefing_snippets.py <이번주 시작> <끝>` → JSON의 HTML 조각으로 해당 섹션을 교체한다.
    - 공부노트: core(핵심 단지 표), week(이번 주 상위 10건), predictions(예측 기록장), card_facts(단지 카드의 "숫자로 본 현재 위치", 단지 이름별).
-   - 특별호: volume·gap(달력 기준 최근 6개월·3개월이므로 월초에는 지난달 말 기준으로 계산할 것), volume_vs, compare, region(권역별 비교 표), phase_index·phase_points·phase_count·phase_lean(시장 판단), spread_busan·spread_busan_line·spread_seoul(격차 보기).
+   - 특별호: volume·gap(달력 기준 최근 6개월·3개월이므로 월초에는 지난달 말 기준으로 계산할 것), volume_vs, compare, region(권역별 비교 표), phase_index·phase_points·phase_count·phase_lean(시장 판단), spread_busan·spread_busan_line·spread_seoul(격차 보기), history·history_index(판단 기록, 페이지 스크립트의 `IDX`).
 4. 호수·날짜, "이번 호 3줄 요약"(공부노트 맨 위 `#summary`), 지난 호 "생각해 볼 질문" 해설, 새 질문을 갱신한다. 기존 디자인·CSS 클래스·근거 등급 배지(`.gr .g1` 실거래 / `.g2` 공식 / `.g3` 보도 / `.g4` 추정·호가)는 유지한다.
 5. 같은 URL로 publish.
 
 ### 각 노트의 구성 (바꿀 때 지킬 것)
 - 공부노트: 매주. 맨 위 3줄 요약 → 핵심 단지 → 이번 주 거래 → 주간 요약(맨 끝에 권역 한 줄 + 특별호 링크) → 지역별 대장·준대장 카드 → 개념·질문·예측 → 맨 아래 접힌 "도구와 자료"(비용 계산, 임장 체크, 영상).
-- 특별호: 매월. 구별 시세 흐름 → 권역별 비교(`#region`) → 시장 판단(`#phase`) → 격차 보기(`#spread`) → 올해 흐름 → 네 가지 요인 → 거래량 → 청약 결과 → 대출 계산 → 관심지역 → 다음 달 확인 → 개념·질문·지난 질문.
+- 특별호: 매월. 구별 시세 흐름 → 권역별 비교(`#region`) → 시장 판단(`#phase`) → 격차 보기(`#spread`) → 판단 기록(`#record`) → 올해 흐름 → 네 가지 요인 → 거래량 → 청약 결과 → 대출 계산 → 관심지역 → 다음 달 확인 → 개념·질문·지난 질문.
 - 시장 판단 기준은 `busan_note/market.py` 상단 숫자로 고정한다(26주 ±0.5%, 포인트 다섯 중 셋). 기준금리는 공개 API가 없어 `config/market.json`을 결정 때마다 손으로 고친다.
 - 격차 보기: 상급지는 해운대·수영·동래·남구(`market.UPPER`)로 고정, 부산 전체와 1년 변동 차이를 반년 전과 비교(0.5%p 넘게 변하면 벌어짐/좁혀짐). 서울 비교 지수는 `data/reb/compare.json`.
+- 판단 기록: 포인트 판정은 실거래 갱신 때 `data/monthly_log.json`에 달마다 자동 저장(부동산원 조사 달 기준, 지수·격차는 시계열에서 다시 계산). "내 판단 일지"는 특별호 아티팩트 db `mycalls/<YYYY-MM>`(주인만 읽고 씀)에 사용자가 직접 적는다. 새 호마다 페이지 스크립트의 `MONTH`를 그 달로 바꾼다. 내 판단은 대신 적거나 고치지 않는다.
 - 공부노트에는 서부산·원도심을 넣지 않는다(권역 한 줄만). 부산 전체 비교는 특별호에서 한다.
 
 ## 내용 규칙

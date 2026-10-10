@@ -101,6 +101,12 @@ def main():
         return 0
     path = render.build()
     logging.info("페이지 생성: %s", path)
+    try:
+        from busan_note import analyze, market
+        market.record_month(analyze.build_context())
+        logging.info("판단 기록 저장: data/monthly_log.json")
+    except Exception as e:   # 기록 실패가 갱신 전체를 멈추지 않게
+        logging.warning("판단 기록 건너뜀: %s", e)
     return 0
 
 
