@@ -37,5 +37,36 @@ class CardFactsTest(unittest.TestCase):
         self.assertEqual((up, down), ([], []))
 
 
+def _item(name, vals):
+    ks = [f"{2021 + i // 52}{i % 52 + 1:02d}" for i in range(len(vals))]
+    return {"name": name, "series": [(k, f"2021-01-{1 + i % 28:02d}", v, v) for i, (k, v) in enumerate(zip(ks, vals))]}
+
+
+class SpreadTest(unittest.TestCase):
+    def test_gap_and_trend(self):
+        base = _item("부산", [100.0] * 120)
+        up = _item("해운대구", [100.0] * 60 + [100 + i * 0.1 for i in range(60)])
+        rows = market.spread_rows([base, up], "부산", ["해운대구"], group=("평균", ["해운대구"]))
+        self.assertEqual(rows[0]["gap"], 0)
+        self.assertGreater(rows[1]["gap"], rows[1]["gap_prev"])
+        self.assertEqual(market.spread_trend(rows[1]["gap"], rows[1]["gap_prev"]), "벌어짐")
+        self.assertAlmostEqual(rows[2]["ch52"], rows[1]["ch52"])
+        self.assertEqual(rows[1]["turn"][0], "상승")
+
+    def test_trend_band(self):
+        self.assertEqual(market.spread_trend(2.0, 1.7), "비슷")
+        self.assertEqual(market.spread_trend(-1.0, -2.0), "좁혀짐")
+        self.assertEqual(market.spread_trend(None, 1.0), "–")
+
+
+class CompareRegionTest(unittest.TestCase):
+    def test_pick(self):
+        from busan_note import reb
+        self.assertTrue(reb.is_compare("서울"))
+        self.assertTrue(reb.is_compare("서울>강남지역>동남권>강남구"))
+        self.assertFalse(reb.is_compare("서울>강북지역>도심권>중구"))
+        self.assertFalse(reb.is_compare("부산>중부산권>중구"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -201,3 +201,76 @@ def card_facts(c):
         r = jr["ratio"]
         (up if r >= 0.6 else down).append(f"전세가율 {r * 100:.0f}%(신규 계약 {jr['n']}건 기준)")
     return up[:3], down[:3]
+
+
+# ---- 격차 보기 ----
+UPPER = ["해운대구", "수영구", "동래구", "남구"]   # 부산 상급지로 정해 둔 4개 구(바꾸지 않는다)
+TURN_WEEKS = 13   # 방향 전환: 13주 변동의 부호가 바뀐 가장 최근 주
+
+
+def _sale_map(item):
+    return {k: (d, v) for k, d, v, _ in item["series"]}
+
+
+def _ch_on(m, weeks_list, i, n):
+    """weeks_list[i] 주 기준 n주 변동(%)."""
+    if i - n < 0:
+        return None
+    a, b = m.get(weeks_list[i]), m.get(weeks_list[i - n])
+    return (a[1] / b[1] - 1) * 100 if a and b else None
+
+
+def last_turn(item, n=TURN_WEEKS):
+    """13주 변동이 마지막으로 부호를 바꾼 주: ("상승"/"하락", 날짜). 없으면 None."""
+    m = _sale_map(item)
+    ks = sorted(m)
+    chs = [(_ch_on(m, ks, i, n), ks[i]) for i in range(len(ks))]
+    chs = [(c, k) for c, k in chs if c is not None]
+    for j in range(len(chs) - 1, 0, -1):
+        if (chs[j][0] > 0) != (chs[j - 1][0] > 0):
+            return ("상승" if chs[j][0] > 0 else "하락", m[chs[j][1]][0])
+    return None
+
+
+def spread_rows(items, base, names, group=None):
+    """base 지역과 비교한 격차 표. items: weekly_summary() 목록(여러 파일을 합쳐도 된다).
+    group=(이름, [지역들]) 이면 그 지역들의 단순 평균 줄을 덧붙인다."""
+    by = {r["name"]: r for r in items}
+    bm = _sale_map(by[base])
+    ks = sorted(bm)
+    last = len(ks) - 1
+
+    def one(name):
+        it = by[name]
+        m = _sale_map(it)
+        pos = index_position(it)
+        return {"name": name, "vs_peak": pos["vs_peak"], "ch52": _ch_on(m, ks, last, 52),
+                "ch13": _ch_on(m, ks, last, 13), "ch52_prev": _ch_on(m, ks, last - 26, 52),
+                "turn": last_turn(it)}
+
+    rows = [one(n) for n in [base] + [n for n in names if n in by]]
+    if group:
+        g = [one(n) for n in group[1] if n in by]
+        avg = lambda k: sum(r[k] for r in g) / len(g) if g and all(r[k] is not None for r in g) else None
+        rows.append({"name": group[0], "vs_peak": avg("vs_peak"), "ch52": avg("ch52"), "ch13": avg("ch13"),
+                     "ch52_prev": avg("ch52_prev"), "turn": None, "group": True})
+    b = rows[0]
+    for r in rows:
+        r["gap"] = r["ch52"] - b["ch52"] if r["ch52"] is not None and b["ch52"] is not None else None
+        r["gap_prev"] = (r["ch52_prev"] - b["ch52_prev"]
+                         if r["ch52_prev"] is not None and b["ch52_prev"] is not None else None)
+    return rows
+
+
+def spread_trend(gap, gap_prev, band=0.5):
+    """1년 변동 차이가 반년 전보다 band(%p) 넘게 커졌으면 '벌어짐', 줄었으면 '좁혀짐'."""
+    if gap is None or gap_prev is None:
+        return "–"
+    if abs(gap) - abs(gap_prev) > band:
+        return "벌어짐"
+    if abs(gap_prev) - abs(gap) > band:
+        return "좁혀짐"
+    return "비슷"
+
+
+SEOUL_ROWS = ["서울", "강남구", "서초구", "송파구", "용산구", "마포구", "성동구", "수도권", "전국"]

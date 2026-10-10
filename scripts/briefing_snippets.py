@@ -14,7 +14,7 @@ from html import escape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from busan_note import analyze, collect, market  # noqa: E402
+from busan_note import reb, analyze, collect, market  # noqa: E402
 from busan_note.money import format_won, korean_unit, pyeong_type  # noqa: E402
 
 GU_ORDER = ["26350", "26500", "26290", "26230", "26260", "26470"]
@@ -204,6 +204,29 @@ def phase_tables(rows, pts):
     return idx, ptab
 
 
+def spread_table(rows):
+    base = rows[0]["name"]
+
+    def gp(v):
+        return "–" if v is None else f"{v:+.1f}%p"
+
+    def tr(r):
+        nm = "부산 전체" if r["name"] == "부산" else r["name"]
+        n = f"<b>{e(nm)}</b>" if not r.get("group") else f"<b><i>{e(nm)}</i></b>"
+        t = r.get("turn")
+        turn = f"{t[0]} 전환<br><small>{_ymd(t[1])}</small>" if t else "–"
+        if r["name"] == base:
+            gap = "기준"
+        else:
+            gap = (f"<b>{gp(r['gap'])}</b><br><small>반년 전 {gp(r['gap_prev'])}</small>")
+        trend = "" if r["name"] == base else market.spread_trend(r["gap"], r["gap_prev"])
+        return (f'<tr><td>{n}</td><td class="num">{_pc(r["vs_peak"], 1)}</td><td class="num">{_pc(r["ch52"])}</td>'
+                f'<td class="num">{_pc(r["ch13"])}</td><td class="num">{gap}</td><td>{e(trend)}</td><td>{turn}</td></tr>')
+    return (f'<div class="scroll"><table><tr><th>지역</th><th>2022년 고점 대비</th><th>최근 1년</th><th>최근 13주</th>'
+            f'<th>{e("부산 전체" if base == "부산" else base)}와 1년 변동 차이</th><th>격차</th><th>최근 방향 전환<br><small>13주 변동 기준</small></th></tr>'
+            + "".join(tr(r) for r in rows) + "</table></div>")
+
+
 def card_facts_html(ctx, asof):
     out = {}
     for c in ctx["cards"]:
@@ -256,6 +279,16 @@ def main():
         "phase_states": {r["name"]: r["pos"]["state"] for r in rows},
         "card_facts": card_facts_html(ctx, out["asof"]),
     })
+    sp = market.spread_rows(ctx["reb"], "부산", market.UPPER + ["서부산권"],
+                            group=("상급지 4개 구 평균", market.UPPER))
+    up, west = sp[-1], next(r for r in sp if r["name"] == "서부산권")
+    out["spread_busan"] = spread_table(sp)
+    out["spread_busan_line"] = (f"상급지 4개 구 평균과 서부산권의 1년 변동 차이 {up['ch52'] - west['ch52']:+.1f}%p"
+                                f"(반년 전 {up['ch52_prev'] - west['ch52_prev']:+.1f}%p)")
+    cmp_items = reb.weekly_summary(reb.COMPARE_OUT) or []
+    seoul = [n for n in market.SEOUL_ROWS if n in {r["name"] for r in cmp_items}]
+    out["spread_seoul"] = (spread_table(market.spread_rows(ctx["reb"] + cmp_items, "부산", seoul))
+                           if "서울" in seoul else None)
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1)
 
 
