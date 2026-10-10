@@ -18,7 +18,9 @@ TESTS = [
     ("지수시세(코스피)", f"{FSC}/GetMarketIndexInfoService/getStockMarketIndex", {"idxNm": "코스피"}),
     ("일반상품시세(금)", f"{FSC}/GetGeneralProductInfoService/getGoldPriceInfo", {}),
     ("주식시세(리츠)", f"{FSC}/GetStockSecuritiesInfoService/getStockPriceInfo", {"likeItmsNm": "리츠"}),
-    ("주식배당", f"{FSC}/GetStocDiviInfoService/getDiviInfo", {"stckIssuCmpyNm": "SK리츠"}),
+    ("주식배당(A)", "https://apis.data.go.kr/1160100/GetStocDiviInfoService/getDiviInfo", {"stckIssuCmpyNm": "SK리츠"}),
+    ("주식배당(B)", f"{FSC}/GetStocDiviInfoService_V2/getDiviInfo_V2", {"stckIssuCmpyNm": "SK리츠"}),
+    ("주식배당(C)", "https://apis.data.go.kr/1160100/GetStocDiviInfoService_V2/getDiviInfo_V2", {"stckIssuCmpyNm": "SK리츠"}),
     ("채권시세(국고채)", f"{FSC}/GetBondSecuritiesInfoService/getBondPriceInfo", {"likeItmsNm": "국고채"}),
 ]
 
