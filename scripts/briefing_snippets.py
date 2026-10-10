@@ -286,7 +286,8 @@ def main():
     out["spread_busan_line"] = (f"상급지 4개 구 평균과 서부산권의 1년 변동 차이 {up['ch52'] - west['ch52']:+.1f}%p"
                                 f"(반년 전 {up['ch52_prev'] - west['ch52_prev']:+.1f}%p)")
     cmp_items = reb.weekly_summary(reb.COMPARE_OUT) or []
-    seoul = [n for n in market.SEOUL_ROWS if n in {r["name"] for r in cmp_items}]
+    have = {r["name"] for r in cmp_items if len(r["series"]) >= 60}   # 과거 자료가 다 쌓인 지역만
+    seoul = [n for n in market.SEOUL_ROWS if n in have]
     out["spread_seoul"] = (spread_table(market.spread_rows(ctx["reb"] + cmp_items, "부산", seoul))
                            if "서울" in seoul else None)
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1)
