@@ -64,6 +64,16 @@ TABLES = {"sale": "T244183132827305", "jeonse": "T247713133046872"}   # (주) �
 BUSAN_ROOT = "부산"
 START_WEEK = "202101"
 OUT = api.ROOT / "data" / "reb" / "weekly.json"
+# 격차 보기용 비교 지역(부산과 따로 저장: 서울에도 중구·서구 같은 이름이 있다)
+COMPARE_OUT = api.ROOT / "data" / "reb" / "compare.json"
+COMPARE_TOP = {"전국", "수도권", "지방", "서울"}
+COMPARE_SEOUL = {"강북지역", "강남지역", "강남구", "서초구", "송파구", "용산구", "마포구", "성동구"}
+
+
+def is_compare(full):
+    parts = full.split(">")
+    leaf = parts[-1]
+    return leaf in COMPARE_TOP or ("서울" in parts[:-1] and leaf in COMPARE_SEOUL)
 
 
 def busan_regions(key):
@@ -97,6 +107,9 @@ def collect_weekly(log=print, refetch_weeks=6):
     regions = {r["ITM_ID"]: r["ITM_FULLNM"] for r in itm
                if r["ITM_TAG"] == "분류" and r["ITM_FULLNM"].split(">")[0] == BUSAN_ROOT}
     out = {full.split(">")[-1]: old.get(full.split(">")[-1], {"full": full, "weeks": {}}) for full in regions.values()}
+    cmp_ids = {r["ITM_ID"]: r["ITM_FULLNM"] for r in itm if r["ITM_TAG"] == "분류" and is_compare(r["ITM_FULLNM"])}
+    cmp_old = json.loads(COMPARE_OUT.read_text(encoding="utf-8")) if COMPARE_OUT.exists() else {}
+    cmp_out = {full.split(">")[-1]: cmp_old.get(full.split(">")[-1], {"full": full, "weeks": {}}) for full in cmp_ids.values()}
     all_weeks = {k for v in out.values() for k in v["weeks"]}
     start = _week_back(all_weeks, refetch_weeks) if all_weeks else START_WEEK
     failures = []
@@ -112,6 +125,10 @@ def collect_weekly(log=print, refetch_weeks=6):
             continue
         n = 0
         for r in rows:
+            full = cmp_ids.get(r["CLS_ID"])
+            if full:
+                cmp_out[full.split(">")[-1]]["weeks"].setdefault(
+                    r["WRTTIME_IDTFR_ID"], {"date": r["WRTTIME_DESC"]})[kind] = r["DTA_VAL"]
             full = regions.get(r["CLS_ID"])
             if not full:
                 continue
@@ -125,19 +142,53 @@ def collect_weekly(log=print, refetch_weeks=6):
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     log(f"부동산원 주간 지수: {len(out)}개 지역, 실패 {len(failures)}건")
+    _backfill_compare(key, cmp_ids, cmp_out, log)
+    for v in cmp_out.values():
+        v["weeks"] = dict(sorted(v["weeks"].items()))
+    COMPARE_OUT.write_text(json.dumps(cmp_out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log(f"비교 지역(서울 등): {', '.join(cmp_out) or '없음'}")
     return failures
+
+
+def _backfill_compare(key, cmp_ids, cmp_out, log, max_calls=12):
+    """비교 지역 중 과거 자료가 모자란 곳만 지역별로 처음부터 받는다(한 번에 max_calls회까지).
+    실패해도 멈추지 않고 다음 갱신 때 다시 시도한다."""
+    calls = 0
+    order = ["서울", "강남구", "서초구", "송파구", "용산구", "마포구", "성동구", "강남지역", "강북지역", "전국", "수도권", "지방"]
+    rank = lambda kv: order.index(kv[1].split(">")[-1]) if kv[1].split(">")[-1] in order else 99
+    for cid, full in sorted(cmp_ids.items(), key=rank):
+        weeks = cmp_out[full.split(">")[-1]]["weeks"]
+        if len(weeks) >= 100:
+            continue
+        for kind, tbl in TABLES.items():
+            if calls >= max_calls:
+                log("비교 지역 과거 자료: 나머지는 다음 갱신 때 받음")
+                return
+            calls += 1
+            try:
+                rows = call("SttsApiTblData.do", key, timeout=30, retries=(5, 20), max_pages=2,
+                            STATBL_ID=tbl, DTACYCLE_CD="WK", START_WRTTIME=START_WEEK, CLS_ID=cid)
+            except RebError as e:
+                log(f"비교 지역 과거 자료 실패: {full} — {mask(e)[:120]}")
+                return
+            for r in rows:
+                if r.get("CLS_ID") == cid:
+                    weeks.setdefault(r["WRTTIME_IDTFR_ID"], {"date": r["WRTTIME_DESC"]})[kind] = r["DTA_VAL"]
+            time.sleep(1)
+        log(f"비교 지역 과거 자료: {full} {len(weeks)}주")
 
 
 def _chg(a, b):
     return (a / b - 1) * 100 if a and b else None
 
 
-def weekly_summary():
+def weekly_summary(path=None):
     """지역별 주간 변동률(%)·연속 주수·올해 누계·4주 변동. 파일이 없으면 None."""
     import json
-    if not OUT.exists():
+    path = path or OUT
+    if not path.exists():
         return None
-    data = json.loads(OUT.read_text(encoding="utf-8"))
+    data = json.loads(path.read_text(encoding="utf-8"))
     rows = []
     for name, d in data.items():
         weeks = [(k, v) for k, v in d["weeks"].items() if v.get("sale")]
