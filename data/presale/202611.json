@@ -1,3 +1,5 @@
 [
-
+{"kind":"presale","lawd":"26230","umd":"양정동","apt":"양정 롯데캐슬 프론티엘","aptSeq":"","jibun":"64-3","dong":"","date":"2026-11-03","area":84.9732,"floor":"2","price":827700000,"cancelled":false,"cancel_date":"","direct":false,"ownership":"","first_seen":"2026-11-05T17:48"},
+{"kind":"presale","lawd":"26290","umd":"대연동","apt":"대연 디아이엘","aptSeq":"","jibun":"1619","dong":"","date":"2026-11-01","area":84.9812,"floor":"1","price":783630000,"cancelled":true,"cancel_date":"26.11.02","direct":false,"ownership":"","first_seen":"2026-11-05T17:48"},
+{"kind":"presale","lawd":"26290","umd":"문현동","apt":"롯데캐슬 인피니엘","aptSeq":"","jibun":"295-1","dong":"","date":"2026-11-03","area":59.9665,"floor":"24","price":585000000,"cancelled":false,"cancel_date":"","direct":false,"ownership":"입","first_seen":"2026-11-05T17:48"}
 ]

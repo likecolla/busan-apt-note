@@ -1,11 +1,18 @@
 {
- "last_run": "2026-11-02T17:40",
+ "last_run": "2026-11-05T17:48",
  "baseline_kinds": [],
- "new_count": 381,
+ "new_count": 674,
  "months": [
   "202609",
   "202610",
   "202611"
  ],
- "failures": []
+ "failures": [
+  {
+   "kind": "부동산원 주간 지수",
+   "gu": "전체",
+   "ym": "",
+   "error": "부동산원 접속 실패(72초): 네트워크 오류: HTTPSConnectionPool(host='www.reb.or.kr', port=443): Max retries exceeded with url: /r-one/openapi/SttsApiTblItm.do?STATBL_ID=T2441831"
+  }
+ ]
 }
