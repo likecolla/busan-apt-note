@@ -174,31 +174,29 @@ def _weeks(end_iso, n=8):
     return [((end - timedelta(days=7 * i + 6)).isoformat(), (end - timedelta(days=7 * i)).isoformat()) for i in range(n)][::-1]
 
 
-def study(ctx, recs, start, end):
-    reb = ctx["reb"]
-    busan = next(r for r in reb if r["name"] == "부산")
+def last_week(last_run):
+    """last_run 날짜 기준으로 끝난 가장 최근 목~수 계약 주 (시작, 끝)."""
+    d = date.fromisoformat(last_run[:10])
+    end = d - timedelta(days=(d.weekday() - 2) % 7 or 7)
+    return (end - timedelta(days=6)).isoformat(), end.isoformat()
+
+
+def _week_counts(ctx, recs, end):
     trades = [r for r in recs if r["kind"] == "trade" and not r["cancelled"]]
     wk = []
     for a, b in _weeks(end):
         cnt = sum(1 for r in trades if a <= r["date"] <= b)
         part = (date.fromisoformat(ctx["meta"]["last_run"][:10]) - date.fromisoformat(b)).days < 30
         wk.append((f"{int(a[5:7])}/{int(a[8:10])}", cnt, part))
-    this = wk[-1][1]
-    ah = ctx["applyhome"]
-    short = ah["last12_short"] / ah["last12_n"] * 100 if ah.get("last12_n") else None
-    cards = [
-        kpi(f"이번 주 매매 신고 ({_ymd(start)}~{_ymd(end)})", f"{this:,}건", "관심 6개 구, 해제 제외 · 신고는 30일 안에 계속 늘어남"),
-        kpi(f"부산 매매 주간 ({_ymd(busan['date'])} 조사)", _pc(busan["sale_wk"]),
-            f"{busan['sale_streak'][1]}주 연속 {busan['sale_streak'][0]}", color=_sign_color(busan["sale_wk"])),
-        kpi("부산 전세 주간", _pc(busan["jeonse_wk"]), f"{busan['jeonse_streak'][1]}주 연속 {busan['jeonse_streak'][0]}",
-            color=_sign_color(busan["jeonse_wk"])),
-    ]
-    if short is not None:
-        cards.append(kpi("최근 12개월 부산 청약", f"{ah['last12_short']}/{ah['last12_n']}건 미달",
-                         "미달 주택형이 있는 분양 단지 비율", f'<div class="tw-mt-1">{progress(short, "var(--up)", "미달 비율")}</div>'))
-    grid = '<div class="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-4">' + "".join(cards) + "</div>"
-    chart = (f'<div class="{CARD}"><div class="tw-mb-1 tw-font-semibold">주별 매매 계약 (현재까지 신고된 건수)</div>'
-             f'<div class="{SUB} tw-mb-3">목~수 계약 주 기준. 옅은 막대는 신고 기한(30일)이 안 지나 더 늘어날 주</div>{bars(wk)}</div>')
+    return wk
+
+
+def _weeks_box(wk):
+    return (f'<div class="{CARD}"><div class="tw-mb-1 tw-font-semibold">주별 매매 계약 (현재까지 신고된 건수)</div>'
+            f'<div class="{SUB} tw-mb-3">목~수 계약 주 기준. 옅은 막대는 신고 기한(30일)이 안 지나 더 늘어날 주</div>{bars(wk)}</div>')
+
+
+def _core_box(ctx):
     rows = ""
     for c in ctx["cards"]:
         ratio = c["med3"] / c["peak"]["price"] * 100 if c["med3"] and c.get("peak") else None
@@ -216,7 +214,50 @@ def study(ctx, recs, start, end):
                      f'<span class="{SUB} tw-whitespace-nowrap">최고가의 {ratio:.0f}%</span>')
         rows += (f'<span class="{SUB}">{e(c["kind_ko"])} · 84㎡형 3개월 {c["n3"]}건{few}</span>'
                  f'<span class="{SUB} tw-whitespace-nowrap">3.3㎡당 1년 {yoy}</span></div></div>')
-    table = (f'<div class="{CARD}"><div class="tw-font-semibold">핵심 요약 · 핵심 단지 84㎡형(34평형)</div>'
-             f'<div class="{SUB} tw-mb-1">오른쪽 금액은 최근 3개월 중간값, 막대는 최근 5년 최고가 대비 위치</div>{rows}</div>')
-    body = grid + f'<div class="tw-mt-4 tw-grid tw-gap-4 md:tw-grid-cols-2">{table}{chart}</div>'
+    return (f'<div class="{CARD}"><div class="tw-font-semibold">핵심 요약 · 핵심 단지 84㎡형(34평형)</div>'
+            f'<div class="{SUB} tw-mb-1">오른쪽 금액은 최근 3개월 중간값, 막대는 최근 5년 최고가 대비 위치</div>{rows}</div>')
+
+
+def study(ctx, recs, start, end):
+    reb = ctx["reb"]
+    busan = next(r for r in reb if r["name"] == "부산")
+    wk = _week_counts(ctx, recs, end)
+    this = wk[-1][1]
+    ah = ctx["applyhome"]
+    short = ah["last12_short"] / ah["last12_n"] * 100 if ah.get("last12_n") else None
+    cards = [
+        kpi(f"이번 주 매매 신고 ({_ymd(start)}~{_ymd(end)})", f"{this:,}건", "관심 6개 구, 해제 제외 · 신고는 30일 안에 계속 늘어남"),
+        kpi(f"부산 매매 주간 ({_ymd(busan['date'])} 조사)", _pc(busan["sale_wk"]),
+            f"{busan['sale_streak'][1]}주 연속 {busan['sale_streak'][0]}", color=_sign_color(busan["sale_wk"])),
+        kpi("부산 전세 주간", _pc(busan["jeonse_wk"]), f"{busan['jeonse_streak'][1]}주 연속 {busan['jeonse_streak'][0]}",
+            color=_sign_color(busan["jeonse_wk"])),
+    ]
+    if short is not None:
+        cards.append(kpi("최근 12개월 부산 청약", f"{ah['last12_short']}/{ah['last12_n']}건 미달",
+                         "미달 주택형이 있는 분양 단지 비율", f'<div class="tw-mt-1">{progress(short, "var(--up)", "미달 비율")}</div>'))
+    grid = '<div class="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-4">' + "".join(cards) + "</div>"
+    body = grid + f'<div class="tw-mt-4 tw-grid tw-gap-4 md:tw-grid-cols-2">{_core_box(ctx)}{_weeks_box(wk)}</div>'
+    return _wrap("한눈에 보기", f"실거래 {ctx['meta'].get('last_run', '')[:10]} · 부동산원 {_ymd(busan['date'])} 조사", body)
+
+
+# ---- 실거래 노트(GitHub Pages) ----
+def site(ctx, recs):
+    """실거래 노트 맨 위 대시보드: 이번 갱신 신고 건수, 부산 지수, 시장 판단, 핵심 단지, 주별 거래."""
+    busan = next(r for r in ctx["reb"] if r["name"] == "부산")
+    start, end = last_week(ctx["meta"]["last_run"])
+    wk = _week_counts(ctx, recs, end)
+    pts = market.points(ctx, market.load_kosis(), market.load_market_cfg())
+    n, lean = market.verdict(pts, None)
+    cards = [
+        kpi("이번 갱신에서 새로 신고된 거래", f"{ctx['new_total']:,}건",
+            f"관심 단지 {len(ctx['new_watch']):,}건 · 나머지 {len(ctx['new_other']):,}건"),
+        kpi(f"부산 매매 주간 ({_ymd(busan['date'])} 조사)", _pc(busan["sale_wk"]),
+            f"{busan['sale_streak'][1]}주 연속 {busan['sale_streak'][0]}", color=_sign_color(busan["sale_wk"])),
+        kpi("부산 전세 주간", _pc(busan["jeonse_wk"]), f"{busan['jeonse_streak'][1]}주 연속 {busan['jeonse_streak'][0]}",
+            color=_sign_color(busan["jeonse_wk"])),
+        kpi("시장 판단 (포인트 다섯)", e(lean), f"있음 {n[market.YES]} · 애매 {n[market.MID]} · 반대 {n[market.NO]}",
+            f'<div class="tw-mt-1">{stacked(n)}</div>'),
+    ]
+    grid = '<div class="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-4">' + "".join(cards) + "</div>"
+    body = grid + f'<div class="tw-mt-4 tw-grid tw-gap-4 md:tw-grid-cols-2">{_core_box(ctx)}{_weeks_box(wk)}</div>'
     return _wrap("한눈에 보기", f"실거래 {ctx['meta'].get('last_run', '')[:10]} · 부동산원 {_ymd(busan['date'])} 조사", body)
