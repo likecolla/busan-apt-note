@@ -18,8 +18,8 @@ def css():
     return CSS_FILE.read_text(encoding="utf-8")
 
 
-CARD = "tw-rounded-xl tw-border tw-border-solid tw-border-[color:var(--line)] tw-bg-[color:var(--card)] tw-p-4"
-SUB = "tw-text-[13px] tw-leading-snug tw-text-[color:var(--muted)]"
+CARD = "tw-rounded-xl tw-border tw-border-solid tw-border-[color:var(--line)] tw-bg-[color:var(--card)] tw-p-5"
+SUB = "tw-text-[14px] tw-leading-normal tw-text-[color:var(--muted)]"
 
 
 def e(x):
@@ -58,10 +58,10 @@ def bars(items, h=72):
     top = max(v for _, v, _ in items) or 1
     cols = "".join(
         f'<div class="tw-flex tw-flex-1 tw-flex-col tw-items-center tw-justify-end tw-gap-1">'
-        f'<span class="tw-text-[11px] tw-font-semibold">{v}</span>'
+        f'<span class="tw-text-[13px] tw-font-semibold">{v}</span>'
         f'<div style="height:{max(3, v / top * h):.0f}px;background:var(--harbor);opacity:{0.35 if part else 1}" '
         f'class="tw-w-full tw-rounded-t"></div>'
-        f'<span class="tw-text-[11px] tw-text-[color:var(--muted)]">{e(lb)}</span></div>'
+        f'<span class="tw-text-[13px] tw-text-[color:var(--muted)]">{e(lb)}</span></div>'
         for lb, v, part in items)
     return f'<div class="tw-flex tw-items-end tw-gap-1.5" style="height:{h + 36}px">{cols}</div>'
 
@@ -101,13 +101,13 @@ def kpi(title, value, sub="", extra="", color="var(--ink)"):
 
 def chip(text, kind):
     col = {market.YES: "var(--ok, var(--glass))", market.MID: "var(--lamp)", market.NO: "var(--up)"}.get(kind, "var(--muted)")
-    return (f'<span class="tw-inline-block tw-whitespace-nowrap tw-rounded-full tw-px-2.5 tw-py-0.5 tw-text-[12.5px] tw-font-semibold" '
+    return (f'<span class="tw-inline-block tw-whitespace-nowrap tw-rounded-full tw-px-2.5 tw-py-0.5 tw-text-[13px] tw-font-semibold" '
             f'style="color:{col};border:1px solid {col}">{e(text)}</span>')
 
 
 def _wrap(title, asof, body):
-    return (f'<section id="dash" class="tw-mt-6 tw-mb-2"><div class="tw-flex tw-items-baseline tw-justify-between tw-gap-2 tw-mb-3">'
-            f'<h2 class="tw-text-xl tw-m-0" style="border:0;padding:0">{e(title)}</h2>'
+    return (f'<section id="dash" class="tw-mt-6 tw-mb-2"><div class="tw-flex tw-flex-wrap tw-items-baseline tw-justify-between tw-gap-x-3 tw-gap-y-1 tw-mb-4">'
+            f'<h2 class="tw-text-xl tw-m-0 tw-whitespace-nowrap" style="border:0;padding:0">{e(title)}</h2>'
             f'<span class="{SUB}">{e(asof)}</span></div>{body}</section>')
 
 
@@ -149,7 +149,7 @@ def special(ctx, kosis, cfg, cmp_items=()):
     ]
     if seoul:
         cards.append(kpi("서울 격차 (1년)", f"{seoul['gap']:+.1f}%p", f"서울 − 부산 · 반년 전 {seoul['gap_prev']:+.1f}%p"))
-    grid = '<div class="tw-grid tw-grid-cols-2 sm:tw-grid-cols-3 tw-gap-3">' + "".join(c for c in cards if c) + "</div>"
+    grid = '<div class="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-3 tw-gap-4">' + "".join(c for c in cards if c) + "</div>"
 
     prow = "".join(
         f'<tr><td class="tw-py-2.5 tw-pr-2 tw-align-top"><b>{e(nm)}</b><div class="{SUB}">{e(txt)}</div></td>'
@@ -159,12 +159,12 @@ def special(ctx, kosis, cfg, cmp_items=()):
     rrow = "".join(
         f'<div class="tw-grid tw-grid-cols-[5.5em_1fr_4.5em] tw-items-center tw-gap-2 tw-py-1.5">'
         f'<span class="tw-text-[14px]">{e(r["name"])}</span>{diverge(r["pos"]["ch26"] or 0)}'
-        f'<span class="tw-text-right tw-text-[13px] tw-font-semibold" style="color:{_sign_color(r["pos"]["ch26"] or 0)}">{_pc(r["pos"]["ch26"])}</span></div>'
+        f'<span class="tw-text-right tw-text-[14px] tw-font-semibold" style="color:{_sign_color(r["pos"]["ch26"] or 0)}">{_pc(r["pos"]["ch26"])}</span></div>'
         for r in rows)
     states = " · ".join(f'{r["name"]} {r["pos"]["state"]}' for r in rows)
     rbox = (f'<div class="{CARD}"><div class="tw-mb-1 tw-font-semibold">권역별 최근 26주 지수 변동</div>'
             f'<div class="{SUB} tw-mb-2">+0.5% 이상 회복, −0.5% 이하 하락. {e(states)}</div>{rrow}</div>')
-    body = grid + f'<div class="tw-mt-3 tw-grid tw-gap-3 md:tw-grid-cols-2">{ptable}{rbox}</div>'
+    body = grid + f'<div class="tw-mt-4 tw-grid tw-gap-4 md:tw-grid-cols-2">{ptable}{rbox}</div>'
     return _wrap("한눈에 보기", f"부동산원 {_ymd(busan['date'])} 조사 · 실거래 {ctx['meta'].get('last_run', '')[:10]}", body)
 
 
@@ -196,7 +196,7 @@ def study(ctx, recs, start, end):
     if short is not None:
         cards.append(kpi("최근 12개월 부산 청약", f"{ah['last12_short']}/{ah['last12_n']}건 미달",
                          "미달 주택형이 있는 분양 단지 비율", f'<div class="tw-mt-1">{progress(short, "var(--up)", "미달 비율")}</div>'))
-    grid = '<div class="tw-grid tw-grid-cols-2 sm:tw-grid-cols-4 tw-gap-3">' + "".join(cards) + "</div>"
+    grid = '<div class="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-4">' + "".join(cards) + "</div>"
     chart = (f'<div class="{CARD}"><div class="tw-mb-1 tw-font-semibold">주별 매매 계약 (현재까지 신고된 건수)</div>'
              f'<div class="{SUB} tw-mb-3">목~수 계약 주 기준. 옅은 막대는 신고 기한(30일)이 안 지나 더 늘어날 주</div>{bars(wk)}</div>')
     rows = ""
@@ -218,5 +218,5 @@ def study(ctx, recs, start, end):
                  f'<span class="{SUB} tw-whitespace-nowrap">3.3㎡당 1년 {yoy}</span></div></div>')
     table = (f'<div class="{CARD}"><div class="tw-font-semibold">핵심 요약 · 핵심 단지 84㎡형(34평형)</div>'
              f'<div class="{SUB} tw-mb-1">오른쪽 금액은 최근 3개월 중간값, 막대는 최근 5년 최고가 대비 위치</div>{rows}</div>')
-    body = grid + f'<div class="tw-mt-3 tw-grid tw-gap-3 md:tw-grid-cols-2">{table}{chart}</div>'
+    body = grid + f'<div class="tw-mt-4 tw-grid tw-gap-4 md:tw-grid-cols-2">{table}{chart}</div>'
     return _wrap("한눈에 보기", f"실거래 {ctx['meta'].get('last_run', '')[:10]} · 부동산원 {_ymd(busan['date'])} 조사", body)
