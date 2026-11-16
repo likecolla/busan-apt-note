@@ -14,7 +14,7 @@ from html import escape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from busan_note import reb, analyze, collect, market  # noqa: E402
+from busan_note import reb, analyze, collect, market, dashboard  # noqa: E402
 from busan_note.money import format_won, korean_unit, pyeong_type  # noqa: E402
 
 GU_ORDER = ["26350", "26500", "26290", "26230", "26260", "26470"]
@@ -313,6 +313,9 @@ def main():
     hist = market.history_rows(ctx["reb"], cmp_items, months=12)
     out["history"] = history_table(hist)
     out["history_index"] = market.month_end_index(next(r for r in ctx["reb"] if r["name"] == "부산"))
+    out["dash_special"] = dashboard.special(ctx, kosis, market.load_market_cfg(), cmp_items)
+    out["dash_study"] = dashboard.study(ctx, recs, start, end)
+    out["dash_css"] = dashboard.css()
     out["spread_seoul"] = (spread_table(market.spread_rows(ctx["reb"] + cmp_items, "부산", seoul))
                            if "서울" in seoul else None)
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1)

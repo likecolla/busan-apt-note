@@ -11,14 +11,22 @@
 - 지금 바로 갱신: `.github/workflows/update.yml`의 `workflow_dispatch` 실행 → 끝나면 `git pull`.
 
 ## 공부노트·특별호 새 호 만들기
-아티팩트 두 개 (둘 다 사용자 소유, 같은 URL로 갱신한다 — 새 URL을 만들지 말 것):
+아티팩트 세 개 (모두 사용자 소유, 같은 URL로 갱신한다 — 새 URL을 만들지 말 것):
 - 공부노트: https://claude.ai/artifact/1bUxPJMAQMvRgMQwjGKnef
 - 특별호: https://claude.ai/artifact/CXJQvQX32XyAtERxHXcXP2
+- 부산 시장 대시보드(종합): https://claude.ai/artifact/SJxEddCiezBWTYaBhDzkRb — "Data" 형식. 화면은 그 안에 저장돼 있고, 숫자는 데이터 파일 11개(`scripts/dashboard_data.py`가 만듦)에서 읽는다.
+
+### 대시보드 갱신 (매주 목요일, 공부노트와 함께)
+1. `python scripts/dashboard_data.py <폴더>` → JSON 11개(index_weekly, gu_weekly, busan_now, points, regions, unsold_monthly, spread, history, core, weekly_trades, top_trades).
+2. 파일마다 Artifact `publish`(`url`=대시보드, `asset: true`, `file_path`)로 올려 새 `/_blob/<id>`를 받는다(JSON은 한 번에 하나씩).
+3. ArtifactData `update`로 `datasets/<같은 이름>`의 `source.url`, `updated: {at, by}`, `edit: {via: "claude", at}`만 바꾼다(한 번의 batch). 화면(`files/index.html`)은 건드리지 않는다.
+4. 바꾼 뒤 예전 파일은 Artifact `delete`(`url`, `path`=예전 id)로 지운다.
 
 순서:
 1. `git pull` (최신 데이터), `pip install -r requirements.txt`
 2. Artifact `read` 액션으로 위 URL을 읽어 현재 판을 받는다 (작업본은 저장소에 없다).
 3. `python scripts/briefing_snippets.py <이번주 시작> <끝>` → JSON의 HTML 조각으로 해당 섹션을 교체한다.
+   - 두 노트 공통: 맨 위 "한눈에 보기" `<section id="dash">`를 dash_study(공부노트)·dash_special(특별호)로 통째로 바꾸고, `<style id="dash-css">` 내용을 dash_css로 바꾼다. 대시보드 아래의 "최신 자료/본문 기준" 안내 문장은 본문을 같은 날짜로 갱신하면 지운다.
    - 공부노트: core(핵심 단지 표), week(이번 주 상위 10건), predictions(예측 기록장), card_facts(단지 카드의 "숫자로 본 현재 위치", 단지 이름별).
    - 특별호: volume·gap(달력 기준 최근 6개월·3개월이므로 월초에는 지난달 말 기준으로 계산할 것), volume_vs, compare, region(권역별 비교 표), phase_index·phase_points·phase_count·phase_lean(시장 판단), spread_busan·spread_busan_line·spread_seoul(격차 보기), history·history_index(판단 기록, 페이지 스크립트의 `IDX`).
 4. 호수·날짜, "이번 호 3줄 요약"(공부노트 맨 위 `#summary`), 지난 호 "생각해 볼 질문" 해설, 새 질문을 갱신한다. 기존 디자인·CSS 클래스·근거 등급 배지(`.gr .g1` 실거래 / `.g2` 공식 / `.g3` 보도 / `.g4` 추정·호가)는 유지한다.
@@ -31,6 +39,22 @@
 - 격차 보기: 상급지는 해운대·수영·동래·남구(`market.UPPER`)로 고정, 부산 전체와 1년 변동 차이를 반년 전과 비교(0.5%p 넘게 변하면 벌어짐/좁혀짐). 서울 비교 지수는 `data/reb/compare.json`.
 - 판단 기록: 포인트 판정은 실거래 갱신 때 `data/monthly_log.json`에 달마다 자동 저장(부동산원 조사 달 기준, 지수·격차는 시계열에서 다시 계산). "내 판단 일지"는 특별호 아티팩트 db `mycalls/<YYYY-MM>`(주인만 읽고 씀)에 사용자가 직접 적는다. 새 호마다 페이지 스크립트의 `MONTH`를 그 달로 바꾼다. 내 판단은 대신 적거나 고치지 않는다.
 - 공부노트에는 서부산·원도심을 넣지 않는다(권역 한 줄만). 부산 전체 비교는 특별호에서 한다.
+
+## 읽기 쉽게 쓰기 (폰 기준)
+글:
+- 제목 계층은 H1(호 제목) → H2(섹션) → H3(소주제) 순서로만 쓰고 건너뛰지 않는다. "이번 호 3줄 요약"도 H2.
+- h1 제목은 30자 안팎, 소식 하나만.
+- 중요한 키워드·수치는 `<b>`로 굵게. 한 문단에 두세 개까지만.
+- 셋 이상 나열하는 정보는 문단 대신 목록(`<ul>`)이나 비교 표로. "이번 호 3줄 요약"은 `<ul>` 세 항목, 항목마다 한두 문장.
+- 한 문단은 폰에서 3~4줄 이내. 결론 한 문장을 먼저, 근거는 뒤에.
+- "이 부분은 해석입니다"는 문단마다 한 번만.
+
+화면:
+- 카드 안 여백 16px 이상, 본문 글씨 14px 이상(근거 배지만 13px), 줄 간격 1.5배 이상.
+- 글자색은 짙은 회색(`--ink`), 순수 검정은 쓰지 않는다.
+- 한 줄로 세로로 흐르는 배치. 표는 폰에서 카드나 짧은 줄로 바뀌게 하고 가로 스크롤을 만들지 않는다(메뉴 줄만 예외).
+- 페이지 끝의 가독성 스크립트·CSS(폰에서 긴 설명 3줄 접기 "더 보기", 계약일이 있는 거래 표를 짧은 카드로, `section[id]`를 접기 메뉴로 바꾸는 아코디언)는 지우지 않는다. 섹션은 `<section id=…><h2>제목</h2>…</section>` 구조를 지켜야 접기 메뉴가 된다.
+- 대시보드 디자인은 Tailwind(prefix `tw-`, preflight 끔)로 `busan_note/dashboard.py`에 쓴다. 클래스를 바꾸면 `npx tailwindcss@3.4.16 -c tailwind.config.js -i busan_note/dashboard.tw.css -o busan_note/dashboard.css --minify`로 다시 빌드한다(CDN은 쓰지 않는다).
 
 ## 내용 규칙
 - 민간 사이트(리치고·KB·호갱노노) 추정치·시세는 쓰지 않는다. 국토부·부동산원·KOSIS·청약홈·K-apt 공공데이터만.
