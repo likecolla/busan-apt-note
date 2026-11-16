@@ -9,6 +9,7 @@
 
 ## 실거래 노트 갱신 (자동: 월·목 11:00 KST)
 - 지금 바로 갱신: `.github/workflows/update.yml`의 `workflow_dispatch` 실행 → 끝나면 `git pull`.
+- 화면(`busan_note/render.py`): 맨 위 "한눈에 보기"(`dashboard.site`) → 월·목 5분 점검 → 나머지 `<h2>` 섹션은 페이지 스크립트가 접기 메뉴로 바꾼다(`<main>` 바로 아래 `<h2>` 단위).
 
 ## 공부노트·특별호 새 호 만들기
 아티팩트 세 개 (모두 사용자 소유, 같은 URL로 갱신한다 — 새 URL을 만들지 말 것):

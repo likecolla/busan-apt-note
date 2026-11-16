@@ -2,7 +2,7 @@
 import json
 from html import escape
 
-from . import analyze, api, collect
+from . import analyze, api, collect, dashboard
 from .money import format_won, pyeong_type
 
 SITE = api.ROOT / "site"
@@ -566,6 +566,23 @@ details.more{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px}
 ul.plain{margin:4px 0;padding-left:18px;font-size:.85rem}
 .guide{font-size:.85rem;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .guide p{margin:4px 0}
+/* 대시보드: 페이지 토큰을 대시보드 이름으로 잇기 */
+:root{--card:var(--surface);--harbor:var(--accent);--ink:var(--text);--glass:var(--accent2);--lamp:var(--point);--down:var(--s1);--ok:var(--s3);--soft:color-mix(in srgb,var(--text) 10%,transparent)}
+.few{font-size:.8rem;color:var(--muted);border:1px dashed var(--muted);border-radius:4px;padding:0 4px;white-space:nowrap}
+#dash h2{color:var(--accent);font-size:1.3rem}
+/* 섹션 접기(아코디언) */
+section.acc{border-bottom:1px solid var(--line)}
+section.acc.first{border-top:1px solid var(--line);margin-top:28px}
+section.acc > h2{margin:0;padding:0;border:0}
+.acc-btn{all:unset;box-sizing:border-box;display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:18px 2px;cursor:pointer;font-family:"Gowun Batang","Nanum Myeongjo",serif;font-size:1.2rem;font-weight:700;line-height:1.35;color:var(--accent)}
+.acc-btn .sub{font-family:"IBM Plex Sans KR",sans-serif;font-size:.85rem;margin-left:6px}
+.acc-btn::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;flex:0 0 auto;margin:0 6px 4px 0}
+section.acc.open .acc-btn::after{transform:rotate(-135deg);margin-bottom:-4px}
+.acc-btn:focus-visible{outline:2px solid var(--point);outline-offset:2px}
+.acc-body{display:none;padding:0 0 22px}
+section.acc.open .acc-body{display:block}
+.acc-tools{display:flex;justify-content:flex-end;gap:14px;margin:20px 0 0;font-size:.9rem}
+.acc-tools button{all:unset;cursor:pointer;color:var(--accent);font-weight:600}
 """
 
 JS = r"""
@@ -664,6 +681,34 @@ JS = r"""
 })();
 """
 
+ACC_JS = r"""
+(function(){
+  var main=document.querySelector('main'); if(!main) return;
+  var list=[];
+  [].slice.call(main.querySelectorAll(':scope > h2')).forEach(function(h,i){
+    var s=document.createElement('section'); s.className='acc'+(i===0?' first':'');
+    h.parentNode.insertBefore(s,h); s.appendChild(h);
+    var body=document.createElement('div'); body.className='acc-body';
+    while(s.nextSibling && !(s.nextSibling.nodeType===1 && /^(H2|FOOTER)$/.test(s.nextSibling.tagName))) body.appendChild(s.nextSibling);
+    s.appendChild(body);
+    var b=document.createElement('button'); b.type='button'; b.className='acc-btn'; b.setAttribute('aria-expanded','false');
+    var t=document.createElement('span'); while(h.firstChild) t.appendChild(h.firstChild); b.appendChild(t); h.appendChild(b);
+    b.addEventListener('click',function(){ set(s,!s.classList.contains('open')); });
+    list.push(s);
+  });
+  function set(s,on){ s.classList.toggle('open',on); s.querySelector('.acc-btn').setAttribute('aria-expanded',String(on));
+    if(on) setTimeout(function(){ window.dispatchEvent(new Event('resize')); },0); }
+  function go(id){ var el=id&&document.getElementById(id); if(!el) return; var s=el.closest('section.acc'); if(s){ set(s,true); setTimeout(function(){ el.scrollIntoView(); },0); } }
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){ a.addEventListener('click',function(){ go(a.getAttribute('href').slice(1)); }); });
+  window.addEventListener('hashchange',function(){ go(location.hash.slice(1)); });
+  if(list.length){ var bar=document.createElement('div'); bar.className='acc-tools';
+    bar.innerHTML='<button type="button" data-o="1">모두 펼치기</button><button type="button" data-o="0">모두 접기</button>';
+    bar.addEventListener('click',function(ev){ var o=ev.target.getAttribute('data-o'); if(o===null) return; list.forEach(function(s){ set(s,o==='1'); }); });
+    list[0].parentNode.insertBefore(bar,list[0]); }
+  go(location.hash.slice(1));
+})();
+"""
+
 
 def build():
     ctx = analyze.build_context()
@@ -712,14 +757,15 @@ def build():
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <style>{CSS}</style>
+<style id="dash-css">{dashboard.css()}</style>
 </head>
 <body>
 <main>
 <header class="masthead">
   <h1>부산 대단지 실거래 노트</h1>
   <p class="sub">마지막 갱신 {e(last)} (한국시간) · 계약월 {e(r0)} ~ {e(r1)}</p>
-  <div class="summary">새로 신고된 거래 <b>{ctx["new_total"]:,}건</b></div>
 </header>
+{dashboard.site(ctx, collect.load_all())}
 {routine_box(ctx)}
 
 <h2 id="core">핵심 단지</h2>
@@ -777,6 +823,7 @@ def build():
 <script id="chart-data" type="application/json">{chart_json}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>{JS}</script>
+<script>{ACC_JS}</script>
 </body>
 </html>
 """
