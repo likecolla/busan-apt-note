@@ -11,9 +11,16 @@
 - 지금 바로 갱신: `.github/workflows/update.yml`의 `workflow_dispatch` 실행 → 끝나면 `git pull`.
 
 ## 공부노트·특별호 새 호 만들기
-아티팩트 두 개 (둘 다 사용자 소유, 같은 URL로 갱신한다 — 새 URL을 만들지 말 것):
+아티팩트 세 개 (모두 사용자 소유, 같은 URL로 갱신한다 — 새 URL을 만들지 말 것):
 - 공부노트: https://claude.ai/artifact/1bUxPJMAQMvRgMQwjGKnef
 - 특별호: https://claude.ai/artifact/CXJQvQX32XyAtERxHXcXP2
+- 부산 시장 대시보드(종합): https://claude.ai/artifact/SJxEddCiezBWTYaBhDzkRb — "Data" 형식. 화면은 그 안에 저장돼 있고, 숫자는 데이터 파일 11개(`scripts/dashboard_data.py`가 만듦)에서 읽는다.
+
+### 대시보드 갱신 (매주 목요일, 공부노트와 함께)
+1. `python scripts/dashboard_data.py <폴더>` → JSON 11개(index_weekly, gu_weekly, busan_now, points, regions, unsold_monthly, spread, history, core, weekly_trades, top_trades).
+2. 파일마다 Artifact `publish`(`url`=대시보드, `asset: true`, `file_path`)로 올려 새 `/_blob/<id>`를 받는다(JSON은 한 번에 하나씩).
+3. ArtifactData `update`로 `datasets/<같은 이름>`의 `source.url`, `updated: {at, by}`, `edit: {via: "claude", at}`만 바꾼다(한 번의 batch). 화면(`files/index.html`)은 건드리지 않는다.
+4. 바꾼 뒤 예전 파일은 Artifact `delete`(`url`, `path`=예전 id)로 지운다.
 
 순서:
 1. `git pull` (최신 데이터), `pip install -r requirements.txt`
