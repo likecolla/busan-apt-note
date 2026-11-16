@@ -19,6 +19,7 @@
 1. `git pull` (최신 데이터), `pip install -r requirements.txt`
 2. Artifact `read` 액션으로 위 URL을 읽어 현재 판을 받는다 (작업본은 저장소에 없다).
 3. `python scripts/briefing_snippets.py <이번주 시작> <끝>` → JSON의 HTML 조각으로 해당 섹션을 교체한다.
+   - 두 노트 공통: 맨 위 "한눈에 보기" `<section id="dash">`를 dash_study(공부노트)·dash_special(특별호)로 통째로 바꾸고, `<style id="dash-css">` 내용을 dash_css로 바꾼다. 대시보드 아래의 "최신 자료/본문 기준" 안내 문장은 본문을 같은 날짜로 갱신하면 지운다.
    - 공부노트: core(핵심 단지 표), week(이번 주 상위 10건), predictions(예측 기록장), card_facts(단지 카드의 "숫자로 본 현재 위치", 단지 이름별).
    - 특별호: volume·gap(달력 기준 최근 6개월·3개월이므로 월초에는 지난달 말 기준으로 계산할 것), volume_vs, compare, region(권역별 비교 표), phase_index·phase_points·phase_count·phase_lean(시장 판단), spread_busan·spread_busan_line·spread_seoul(격차 보기), history·history_index(판단 기록, 페이지 스크립트의 `IDX`).
 4. 호수·날짜, "이번 호 3줄 요약"(공부노트 맨 위 `#summary`), 지난 호 "생각해 볼 질문" 해설, 새 질문을 갱신한다. 기존 디자인·CSS 클래스·근거 등급 배지(`.gr .g1` 실거래 / `.g2` 공식 / `.g3` 보도 / `.g4` 추정·호가)는 유지한다.
@@ -38,7 +39,8 @@
 - 문단은 결론 한 문장을 먼저, 근거는 뒤에. 한 문단 4문장 이내.
 - 같은 종류 숫자를 넷 넘게 늘어놓으면 문장 대신 표나 목록으로.
 - "이 부분은 해석입니다"는 문단마다 한 번만.
-- 페이지 끝의 가독성 스크립트·CSS(폰에서 긴 설명 3줄 접기 "더 보기", 계약일이 있는 거래 표를 짧은 카드로)는 지우지 않는다.
+- 페이지 끝의 가독성 스크립트·CSS(폰에서 긴 설명 3줄 접기 "더 보기", 계약일이 있는 거래 표를 짧은 카드로, `section[id]`를 접기 메뉴로 바꾸는 아코디언)는 지우지 않는다. 섹션은 `<section id=…><h2>제목</h2>…</section>` 구조를 지켜야 접기 메뉴가 된다.
+- 대시보드 디자인은 Tailwind(prefix `tw-`, preflight 끔)로 `busan_note/dashboard.py`에 쓴다. 클래스를 바꾸면 `npx tailwindcss@3.4.16 -c tailwind.config.js -i busan_note/dashboard.tw.css -o busan_note/dashboard.css --minify`로 다시 빌드한다(CDN은 쓰지 않는다).
 
 ## 내용 규칙
 - 민간 사이트(리치고·KB·호갱노노) 추정치·시세는 쓰지 않는다. 국토부·부동산원·KOSIS·청약홈·K-apt 공공데이터만.
