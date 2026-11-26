@@ -14,7 +14,7 @@ from html import escape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from busan_note import reb, analyze, collect, market, dashboard  # noqa: E402
+from busan_note import reb, analyze, charts, collect, market, dashboard  # noqa: E402
 from busan_note.money import format_won, korean_unit, pyeong_type  # noqa: E402
 
 GU_ORDER = ["26350", "26500", "26290", "26230", "26260", "26470"]
@@ -316,6 +316,22 @@ def main():
     out["dash_special"] = dashboard.special(ctx, kosis, market.load_market_cfg(), cmp_items)
     out["dash_study"] = dashboard.study(ctx, recs, start, end)
     out["dash_css"] = dashboard.css()
+    # 차트 다섯 가지(인라인 SVG)
+    MINE = ["해운대구", "수영구", "남구", "부산진구", "동래구", "연제구"]
+    ALL_GU = [g for gs in market.REGIONS.values() for g in gs]
+    cards = charts.prepare(ctx["cards"], ctx["now"].strftime("%Y-%m"))
+    out["chart_css"] = charts.CSS
+    out["chart_heat_mine"] = charts.heatmap(charts.heat_data(ctx["reb"], ["부산"] + MINE))
+    out["chart_heat_busan"] = charts.heatmap(charts.heat_data(ctx["reb"], ["부산"] + ALL_GU))
+    out["chart_combo"] = charts.combo(charts.combo_data(ctx))
+    out["chart_box"] = charts.boxplot(charts.box_data(cards))
+    out["chart_bump"] = charts.bump(charts.bump_data(cards))
+    out["chart_dumbbell_ppy"] = charts.dumbbell(charts.ppy_dumbbell_data(cards), "만원", before="1년 전 같은 3개월", after="최근 3개월")
+    sp_rows = market.spread_rows(ctx["reb"], "부산", market.UPPER + ["서부산권"], group=("상급지 평균", market.UPPER))
+    seoul_names = [n for n in market.SEOUL_ROWS if n in have]
+    if "서울" in seoul_names:
+        sp_rows += market.spread_rows(ctx["reb"] + cmp_items, "부산", seoul_names)[1:]
+    out["chart_dumbbell_spread"] = charts.dumbbell(charts.spread_dumbbell_data(sp_rows), "%p", fmt=lambda v: f"{v + 0.0:+.1f}".replace("-0.0", "0.0").replace("+0.0", "0.0"), zero=True, before="반년 전", after="지금")
     out["spread_seoul"] = (spread_table(market.spread_rows(ctx["reb"] + cmp_items, "부산", seoul))
                            if "서울" in seoul else None)
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1)

@@ -15,10 +15,10 @@
 아티팩트 세 개 (모두 사용자 소유, 같은 URL로 갱신한다 — 새 URL을 만들지 말 것):
 - 공부노트: https://claude.ai/artifact/1bUxPJMAQMvRgMQwjGKnef
 - 특별호: https://claude.ai/artifact/CXJQvQX32XyAtERxHXcXP2
-- 부산 시장 대시보드(종합): https://claude.ai/artifact/SJxEddCiezBWTYaBhDzkRb — "Data" 형식. 화면은 그 안에 저장돼 있고, 숫자는 데이터 파일 11개(`scripts/dashboard_data.py`가 만듦)에서 읽는다.
+- 부산 시장 대시보드(종합): https://claude.ai/artifact/SJxEddCiezBWTYaBhDzkRb — "Data" 형식. 화면은 그 안에 저장돼 있고, 숫자는 데이터 파일 15개(`scripts/dashboard_data.py`가 만듦)에서 읽는다.
 
 ### 대시보드 갱신 (매주 목요일, 공부노트와 함께)
-1. `python scripts/dashboard_data.py <폴더>` → JSON 11개(index_weekly, gu_weekly, busan_now, points, regions, unsold_monthly, spread, history, core, weekly_trades, top_trades).
+1. `python scripts/dashboard_data.py <폴더>` → JSON 15개(index_weekly, gu_weekly, busan_now, points, regions, unsold_monthly, spread, history, core, weekly_trades, top_trades, 차트용 gu_heat·volume_index·core_box·core_rank).
 2. 파일마다 Artifact `publish`(`url`=대시보드, `asset: true`, `file_path`)로 올려 새 `/_blob/<id>`를 받는다(JSON은 한 번에 하나씩).
 3. ArtifactData `update`로 `datasets/<같은 이름>`의 `source.url`, `updated: {at, by}`, `edit: {via: "claude", at}`만 바꾼다(한 번의 batch). 화면(`files/index.html`)은 건드리지 않는다.
 4. 바꾼 뒤 예전 파일은 Artifact `delete`(`url`, `path`=예전 id)로 지운다.
@@ -30,6 +30,10 @@
    - 두 노트 공통: 맨 위 "한눈에 보기" `<section id="dash">`를 dash_study(공부노트)·dash_special(특별호)로 통째로 바꾸고, `<style id="dash-css">` 내용을 dash_css로 바꾼다. 대시보드 아래의 "최신 자료/본문 기준" 안내 문장은 본문을 같은 날짜로 갱신하면 지운다.
    - 공부노트: core(핵심 단지 표), week(이번 주 상위 10건), predictions(예측 기록장), card_facts(단지 카드의 "숫자로 본 현재 위치", 단지 이름별).
    - 특별호: volume·gap(달력 기준 최근 6개월·3개월이므로 월초에는 지난달 말 기준으로 계산할 것), volume_vs, compare, region(권역별 비교 표), phase_index·phase_points·phase_count·phase_lean(시장 판단), spread_busan·spread_busan_line·spread_seoul(격차 보기), history·history_index(판단 기록, 페이지 스크립트의 `IDX`).
+   - 차트 다섯 가지(`busan_note/charts.py`, 인라인 SVG): `<style id="chart-css">`를 chart_css로 바꾸고, 각 `.apibox#chart-*` 안의 `<div class="ch">`를 통째로 교체한다.
+     - 공부노트: #core에 chart_box(#chart-box)·chart_dumbbell_ppy(#chart-ppy)·chart_bump(#chart-bump), #weekly에 chart_heat_mine(#chart-heat)·chart_combo(#chart-combo).
+     - 특별호: #map에 chart_heat_busan, #volume에 chart_combo, #spread에 chart_dumbbell_spread, #mine에 chart_box·chart_bump.
+     - 대시보드는 같은 숫자를 데이터 파일(gu_heat·volume_index·core_box·core_rank, 덤벨은 spread)로 받아 페이지가 d3로 그린다.
 4. 호수·날짜, "이번 호 3줄 요약"(공부노트 맨 위 `#summary`), 지난 호 "생각해 볼 질문" 해설, 새 질문을 갱신한다. 기존 디자인·CSS 클래스·근거 등급 배지(`.gr .g1` 실거래 / `.g2` 공식 / `.g3` 보도 / `.g4` 추정·호가)는 유지한다.
 5. 같은 URL로 publish.
 
