@@ -77,6 +77,19 @@ def rec_key(r):
         r["date"], r["area"], r["floor"], money))
 
 
+def loose_key(r):
+    """동 번호를 뺀 키. 처음 신고 때 비어 있던 동이 나중에 채워져도 같은 거래로 본다."""
+    money = r.get("price") if r["kind"] != "rent" else f'{r.get("deposit")}/{r.get("monthly")}'
+    return "|".join(str(x) for x in (
+        r["kind"], r["lawd"], r["aptSeq"] or r["apt"], r["jibun"], r["date"], r["area"], r["floor"], money))
+
+
+def drop_dong_dups(recs):
+    """같은 거래가 '동 비어 있음'과 '동 채워짐' 두 줄로 저장된 경우 빈 쪽을 뺀다."""
+    filled = {loose_key(r) for r in recs if r.get("dong")}
+    return [r for r in recs if r.get("dong") or loose_key(r) not in filled]
+
+
 def _month_file(kind, ym):
     return DATA / kind / f"{ym}.json"
 
@@ -117,6 +130,9 @@ def run_collect(months=None, kinds=KINDS, backfill=False):
         log.info("[%s] %s ~ %s %s", KIND_KO[kind], yms[0], yms[-1], "(첫 수집·기준선)" if baseline else "")
         for ym in yms:
             existing = {rec_key(r): r for r in load_month(kind, ym)}
+            loose = {}
+            for r in existing.values():
+                loose.setdefault(loose_key(r), r)
             got_any = False
             for lawd in LAWD:
                 if net_fail >= MAX_NET_FAIL:
@@ -134,12 +150,18 @@ def run_collect(months=None, kinds=KINDS, backfill=False):
                     failures.append({"kind": KIND_KO[kind], "gu": LAWD[lawd], "ym": ym, "error": msg})
                     continue
                 got_any = True
+                # 이 구·이 달은 API가 지금 가진 전체를 돌려주므로, 저장된 같은 구 자료를 새로 받은 것으로 바꾼다
+                # (동 번호가 나중에 채워진 거래가 두 줄로 남지 않게)
+                # 단, 빈 응답이 오면(일시 오류일 수 있음) 기존 자료를 지우지 않는다
+                if items:
+                    existing = {k: v for k, v in existing.items() if v["lawd"] != lawd}
                 for raw in items:
                     r = normalize(kind, raw)
                     r["lawd"] = r["lawd"] or lawd
                     k = rec_key(r)
-                    if k in existing:
-                        r["first_seen"] = existing[k].get("first_seen", run_id)
+                    old = loose.get(loose_key(r))
+                    if old is not None:
+                        r["first_seen"] = old.get("first_seen", run_id)
                     else:
                         r["first_seen"] = "baseline" if baseline else run_id
                         if not baseline:
@@ -161,4 +183,4 @@ def load_all(kinds=KINDS):
         if d.exists():
             for p in sorted(d.glob("*.json")):
                 out.extend(json.loads(p.read_text(encoding="utf-8")))
-    return out
+    return drop_dong_dups(out)

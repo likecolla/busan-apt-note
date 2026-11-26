@@ -1,4 +1,4 @@
-"""종합 대시보드(부산 시장 대시보드)에 올릴 데이터 파일을 만든다.
+"""종합 대시보드(부산 시장 대시보드)에 올릴 데이터 파일 15개를 만든다.
 
 사용: python scripts/dashboard_data.py <출력 폴더> [이번 주 시작 YYYY-MM-DD] [끝]
 주를 주지 않으면 실거래 갱신일 기준으로 끝난 가장 최근 목~수 주를 쓴다.
@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from busan_note import analyze, collect, market, reb  # noqa: E402
+from busan_note import analyze, charts, collect, market, reb  # noqa: E402
 from busan_note.money import pyeong_type  # noqa: E402
 
 GU_SHORT = {"26350": "해운대", "26500": "수영", "26290": "남구", "26230": "부산진", "26260": "동래", "26470": "연제"}
@@ -157,6 +157,20 @@ def build(start=None, end=None):
                                    "date": r["date"], "area": r["area"], "pyeong": pyeong_type(r["area"]), "floor": r["floor"],
                                    "price": r["price"], "direct": bool(r["direct"])} for i, r in enumerate(wk)],
                          "meta": [src_rt, {"label": "기준", "value": f"{start}~{end} 계약, 금액 순 10건, {last_run[:10]}까지 신고분"}]}
+
+    # 12~15. 차트용(공부노트·특별호와 같은 busan_note/charts.py 데이터 함수)
+    mine = {"해운대구", "수영구", "남구", "부산진구", "동래구", "연제구"}
+    all_gu = [g for gs in market.REGIONS.values() for g in gs]
+    out["gu_heat"] = {"rows": [{"name": h["name"], "week": w["date"], "chg": w["chg"], "mine": h["name"] in mine}
+                               for h in charts.heat_data(reb_rows, ["부산"] + all_gu) for w in h["weeks"]],
+                      "meta": [src_reb, {"label": "기준", "value": "최근 26주, 주간 매매지수 변동률(%)"}]}
+    out["volume_index"] = {"rows": charts.combo_data(ctx),
+                           "meta": [src_rt, src_reb, {"label": "기준", "value": "관심 6개 구 월별 매매 건수(해제·중복 제외), 부산 매매지수는 달마다 마지막 조사 주. partial은 신고 기한이 남은 달"}]}
+    cards = charts.prepare(ctx["cards"], ctx["now"].strftime("%Y-%m"))
+    out["core_box"] = {"rows": charts.box_data(cards),
+                       "meta": [src_rt, {"label": "기준", "value": "핵심 단지 84㎡형(전용 75~90㎡) 최근 3개월 거래가, 해제 제외. q1·q3는 아래·위 절반의 중간값"}]}
+    out["core_rank"] = {"rows": charts.bump_data(cards),
+                        "meta": [src_rt, {"label": "기준", "value": "분기별 3.3㎡당 중간값(전용면적 기준, 모든 면적, 해제 제외) 순위. 거래 3건 미만 분기는 빠짐"}]}
     return out, {"start": start, "end": end, "last_run": last_run, "reb_asof": asof}
 
 
